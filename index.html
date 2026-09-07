@@ -1,0 +1,870 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>見積もり作成ツール CLEAN</title>
+<style>
+:root{--navy:#13233b;--blue:#1769d1;--line:#dbe3ee;--muted:#637186;--bg:#f3f6fa;--danger:#c62828}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#172033;font:14px/1.35 -apple-system,BlinkMacSystemFont,"Noto Sans JP",sans-serif}button,input,select,textarea{font:inherit}button{cursor:pointer}.top{height:56px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:9px;padding:8px max(12px,calc((100% - 1180px)/2));position:sticky;top:0;z-index:20}.brand{font-size:16px;font-weight:900;margin-right:auto}.btn{border:1px solid #cbd5e1;background:#fff;color:#172033;border-radius:8px;padding:8px 11px;font-weight:800}.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff}.btn.danger{color:var(--danger);border-color:#fecaca;background:#fff7f7}.btn.sm{padding:5px 7px;font-size:12px}.shell{max-width:1180px;margin:auto;padding:14px}.panel{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}.start{max-width:760px;margin:30px auto}.start h1{font-size:21px;margin:0 0 12px}.trade-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.trade{min-height:88px;text-align:left;border:1px solid var(--line);border-radius:10px;background:#fff;padding:12px;font-weight:900;color:var(--navy)}.trade:active{background:#eaf3ff;border-color:var(--blue)}.trade small{display:block;font-weight:500;color:var(--muted);margin-top:4px}.workspace{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:12px}.headrow{display:flex;align-items:center;gap:8px;justify-content:space-between;margin-bottom:10px}.headrow h2{font-size:16px;margin:0}.customer{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.field label{display:block;font-size:11px;color:var(--muted);font-weight:800;margin:0 0 3px}.field input,.field textarea,.field select{width:100%;border:1px solid var(--line);border-radius:7px;padding:8px;background:#fff}.quantity{display:flex;gap:7px;flex-wrap:wrap}.quantity .field{min-width:150px;flex:1}.qbox{position:relative;overflow:hidden}.qbox b{position:absolute;right:10px;bottom:-15px;font-size:60px;color:#1769d10d;pointer-events:none}.table{width:100%;border-collapse:collapse}.table th{font-size:11px;text-align:left;color:var(--muted);padding:5px;border-bottom:1px solid var(--line)}.table td{padding:5px;border-bottom:1px solid #edf1f5}.table input,.table select{width:100%;border:1px solid var(--line);border-radius:5px;padding:5px}.money{text-align:right;font-weight:800;white-space:nowrap}.card-list{display:none}.item-card{border:1px solid var(--line);border-radius:7px;margin-bottom:3px;overflow:hidden;background:#fff}.item-line{min-height:36px;display:grid;grid-template-columns:minmax(0,1fr) 47px 32px 67px 78px 28px;align-items:center;gap:3px;padding:3px 6px}.item-name{font-weight:850;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.item-line input{width:100%;border:0;background:transparent;text-align:right;padding:3px;min-width:0}.item-line .unit{text-align:center;font-size:11px}.icon{border:0;background:transparent;color:var(--danger);font-size:19px;padding:2px}.detail{display:none;border-top:1px solid var(--line);padding:8px;background:#fafcff}.item-card.open .detail{display:grid;grid-template-columns:1fr 1fr;gap:7px}.detail .wide{grid-column:1/-1}.summary{display:grid;gap:7px;position:sticky;top:68px}.sumrow{display:flex;justify-content:space-between;border-bottom:1px solid #e7edf4;padding:7px 0}.sumrow.total{font-size:20px;color:var(--blue);border:0}.side-actions{display:grid;gap:7px}.empty{color:var(--muted);padding:18px;text-align:center}.modal-bg{display:none;position:fixed;z-index:100;inset:0;background:#07111a88;padding:14px;align-items:flex-end;justify-content:center}.modal-bg.open{display:flex}.modal{background:#fff;width:min(760px,100%);max-height:90vh;overflow:auto;border-radius:14px;padding:14px}.modal h2{font-size:17px;margin:0 0 10px}.modal-actions{display:flex;gap:7px;justify-content:flex-end;margin-top:12px}.warehouse-card{display:grid;grid-template-columns:1fr auto;gap:7px;align-items:center;border:1px solid var(--line);border-radius:8px;padding:8px;margin-bottom:6px}.warehouse-card strong{display:block}.warehouse-card small{color:var(--muted)}.edit-rows{display:grid;gap:5px}.edit-row{display:grid;grid-template-columns:1.4fr 1fr 55px 55px 70px 85px 26px;gap:4px;align-items:center}.edit-row input,.edit-row select{min-width:0;width:100%;border:1px solid var(--line);border-radius:5px;padding:6px}.notice{font-size:12px;color:var(--muted)}.hide{display:none!important}@media(max-width:760px){body{font-size:13px}.top{height:51px;padding:6px 8px}.brand{font-size:14px}.top .btn{padding:7px 8px;font-size:12px}.shell{padding:7px}.panel{padding:10px;margin-bottom:7px;border-radius:8px}.trade-grid{grid-template-columns:1fr 1fr;gap:6px}.trade{min-height:65px;padding:9px;font-size:13px}.trade small{font-size:10px;margin-top:2px}.workspace{display:block}.side{margin-top:7px}.customer{grid-template-columns:1fr 1fr}.customer .field:first-child{grid-column:1/-1}.table{display:none}.card-list{display:block}.summary{position:static}.item-card.open .detail{display:grid}.modal-bg{padding:0;align-items:flex-end}.modal{border-radius:14px 14px 0 0;max-height:92vh}.edit-row{grid-template-columns:1fr 55px 48px 70px 25px}.edit-row .desc,.edit-row .group{display:none}.hide-mobile{display:none}.headrow{margin-bottom:7px}.quantity .field{min-width:calc(50% - 4px)}.side-actions{grid-template-columns:1fr 1fr}.side-actions .btn:last-child{grid-column:1/-1}}
+</style><style>.guarantee-choice{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 12px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#f8fbff;font-weight:800}.guarantee-choice span{color:var(--navy)}.guarantee-choice label{display:inline-flex;align-items:center;gap:4px;cursor:pointer}.guarantee-choice input{accent-color:var(--blue)}</style>
+</head><body>
+<header class="top"><span class="brand">見積ツール <small>CLEAN</small></span><button class="btn" onclick="App.openCases()">案件</button><button class="btn" onclick="App.openWarehouse()">倉庫</button><button class="btn" onclick="App.openSync()">同期</button><button class="btn" onclick="App.newEstimate()">新規</button><button class="btn primary" onclick="App.saveCase()">保存</button><button class="btn" onclick="App.print()">PDF</button></header>
+<main class="shell">
+ <section id="start" class="panel start"><h1>工事を選ぶ</h1><div id="tradeGrid" class="trade-grid"></div></section>
+ <section id="work" class="hide"><div class="workspace"><div>
+ <section class="panel"><div class="headrow"><div class="construction-field"><label id="tradeTitle">工事名</label><input data-field="constructionName" aria-label="工事名" placeholder="工事名"></div><button class="btn sm" onclick="App.openCustomer()">顧客を選ぶ・入力</button></div><div class="customer"><div class="field"><label>顧客名</label><input data-field="name"></div><div class="field"><label>電話番号</label><input data-field="phone" type="tel"></div><div class="field"><label>工事場所</label><input data-field="address"></div><div class="field"><label>工事期間</label><input data-field="period" placeholder="例：令和8年9月1日〜9月3日"></div><div class="field"><label>会社名</label><select data-field="company"><option value="">選択なし</option><option value="中央技建">中央技建</option><option value="日建">日建</option><option value="エコロジー">エコロジー</option></select></div><div class="field"><label>担当1</label><select data-field="manager"><option value="">選択なし</option><option value="荒川">荒川</option><option value="上原">上原</option><option value="股部">股部</option></select></div></div></section>
+  <section id="quantityPanel" class="panel hide"><div class="headrow"><h2>一括数量</h2></div><div id="quantityBoxes" class="quantity"></div></section>
+  <section class="panel"><div class="headrow"><h2>明細</h2><button class="btn sm" onclick="App.openWarehouse()">＋ 倉庫から追加</button></div><div id="empty" class="empty">明細がありません</div><table class="table"><thead><tr><th>品名</th><th>概要</th><th>数量</th><th>単位</th><th>単価</th><th>金額</th><th></th></tr></thead><tbody id="rows"></tbody></table><div id="cards" class="card-list"></div></section>
+ </div><aside class="side"><section class="panel summary"><div class="field"><label>諸経費（円）</label><input id="expense" type="number"></div><div class="field"><label>備考</label><textarea id="note" rows="4"></textarea></div><div class="sumrow"><span>工事費</span><b id="workSum">¥0</b></div><div class="sumrow"><span>小計</span><b id="subSum">¥0</b></div><div class="sumrow"><span>消費税</span><b id="taxSum">¥0</b></div><div class="sumrow total"><span>合計</span><b id="grandSum">¥0</b></div><div class="side-actions"><button class="btn" onclick="App.openWarehouse()">＋ 工事・項目</button><button class="btn primary" onclick="App.saveCase()">保存</button><button class="btn" onclick="App.print()">PDF・印刷</button></div></section></aside></div></section>
+</main><div id="modalBg" class="modal-bg" onclick="App.backdrop(event)"><div id="modal" class="modal"></div></div>
+<script>
+const CLEAN_APPS_SCRIPT_URL='https://script.google.com/macros/s/AKfycbw461TnwHWu6_SCj8uU0zaImdtiT-3u3HNGY1sAyHbqF_514pIj0oTexmcpHjbINoSeoA/exec';
+const Store=(()=>{const P='mitsumori.clean.';const read=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(P+k));return v??f}catch(_){return f}};const write=(k,v)=>localStorage.setItem(P+k,JSON.stringify(v));return{read,write,keys:{draft:'draft',masters:'masters',templates:'templates',cases:'cases',settings:'settings'}}})();
+const Calc={num:v=>Number(v)||0,yen:v=>'¥'+Math.round(v||0).toLocaleString('ja-JP'),totals:e=>{const work=e.items.reduce((s,x)=>s+Calc.num(x.qty)*Calc.num(x.price),0),expense=Calc.num(e.expense),sub=work+expense,tax=Math.round(sub*.1);return{work,expense,sub,tax,grand:sub+tax}}};
+const Catalog=(()=>{const id=p=>p+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7);const defaults=[
+ ['sash_replace','sash','サッシ交換','既存撤去・新規取付',1,'組',120000,'sashCount'],['sash_finish','sash','サッシまわり補修','内外部仕上げ復旧',1,'組',25000,'sashCount'],['sash_disposal','sash','サッシ処分','運搬・処分',1,'組',8000,'sashCount'],
+ ['bath_demo','bath','浴室内解体','既存浴室の解体・撤去',1,'組',215000,''],['bath_carpentry','bath','周辺大工工事','下地・周辺補修',1,'組',236000,''],['bath_unit','bath','ユニットバス設置','本体・据付調整',1,'組',589000,''],['bath_plumbing','bath','給排水配管工事','給排水接続',1,'組',140000,''],
+ ['conc_base','concrete','砕石敷き・転圧','',0,'㎡',1800,'concreteArea'],['conc_mesh','concrete','ワイヤーメッシュ敷設','',0,'㎡',1200,'concreteArea'],['conc_pour','concrete','土間コンクリート打設','',0,'㎡',8500,'concreteArea'],['conc_form','concrete','型枠工事','',0,'m',2500,''],['conc_dispose','concrete','残土処分','',1,'式',35000,''],
+ ['paint_scaffold','paint','足場仮設組','',0,'㎡',1000,'scaffoldArea'],['paint_net','paint','養生ネット張り','',0,'㎡',200,'scaffoldArea'],['paint_wash','paint','高圧洗浄','',0,'㎡',300,'paintArea'],['paint_under','paint','下塗り','',0,'㎡',700,'paintArea'],['paint_middle','paint','中塗り','',0,'㎡',900,'paintArea'],['paint_top','paint','上塗り','',0,'㎡',900,'paintArea'],['paint_barge','paint','破風塗装','',0,'m',1600,''],['paint_parts','paint','付帯部塗装','',1,'式',65000,''],
+ ['water_toilet','water','便器・タンク交換','',1,'組',180000,''],['water_connect','water','給排水接続工事','',1,'組',45000,''],['water_remove','water','既存撤去・処分','',1,'組',25000,'']
+ ].map(x=>({id:x[0],trade:x[1],name:x[2],desc:x[3],qty:x[4],unit:x[5],price:x[6],group:x[7]}));const templates=[
+  {id:'tpl_sash',trade:'sash',name:'サッシ工事',items:['sash_replace','sash_finish','sash_disposal']},{id:'tpl_bath',trade:'bath',name:'ユニットバス工事',items:['bath_demo','bath_carpentry','bath_unit','bath_plumbing']},{id:'tpl_concrete',trade:'concrete',name:'コンクリ打設工事',items:['conc_base','conc_mesh','conc_pour','conc_form','conc_dispose']},{id:'tpl_paint',trade:'paint',name:'塗装工事',items:['paint_scaffold','paint_net','paint_wash','paint_under','paint_middle','paint_top','paint_barge','paint_parts']},{id:'tpl_water',trade:'water',name:'水回り工事',items:['water_remove','water_toilet','water_connect']}
+ ];function migrate(){if(Store.read('migrated',false))return;const oldM=(()=>{try{return JSON.parse(localStorage.getItem('itemMasters'))}catch(_){return null}})();const oldT=(()=>{try{return JSON.parse(localStorage.getItem('bundleMasters'))}catch(_){return null}})();const oldC=(()=>{try{return JSON.parse(localStorage.getItem('estimates'))}catch(_){return null}})();if(Array.isArray(oldM)&&oldM.length)Store.write('masters',oldM.map(m=>({id:m.id||id('m'),trade:m.category||'other',name:m.name||'',desc:m.desc||'',qty:1,unit:m.unit||'式',price:+m.price||0,group:m.quantityGroup||''})));if(Array.isArray(oldT)&&oldT.length)Store.write('templates',oldT.map(t=>({id:t.id||id('t'),trade:t.category||'other',name:t.name||'',items:(t.items||[]).map(x=>typeof x==='string'?x:x.masterId).filter(Boolean)})));if(Array.isArray(oldC)&&oldC.length)Store.write('cases',oldC);Store.write('migrated',true)}function init(){migrate();if(!Store.read('masters',null))Store.write('masters',defaults);if(!Store.read('templates',null))Store.write('templates',templates)}return{init,id,masters:()=>Store.read('masters',defaults),templates:()=>Store.read('templates',templates),saveMasters:v=>Store.write('masters',v),saveTemplates:v=>Store.write('templates',v)}})();
+const Sync=(()=>{async function request(action,data){const url=Store.read('settings',{}).appsScriptUrl;if(!url)throw Error('Apps Script URL未設定');const r=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,data})});const j=await r.json();if(!j.ok)throw Error(j.error||'同期失敗');return j.data}async function pull(){const data=await request('pullMasters',{});if(data?.masters)Catalog.saveMasters(data.masters);if(data?.templates)Catalog.saveTemplates(data.templates);return data}async function push(){return request('pushMasters',{masters:Catalog.masters(),templates:Catalog.templates()})}return{pull,push}})();
+const Calendar={async chooseCustomer(){return null},normalize:e=>({name:e?.name||'',address:e?.address||'',phone:e?.phone||''})};
+const App=(()=>{let e;const trades={sash:['サッシ工事','箇所数'],bath:['ユニットバス工事',''],concrete:['コンクリ打設工事','施工面積'],paint:['塗装工事',''],water:['水回り工事','']};const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));const clone=v=>JSON.parse(JSON.stringify(v));function fresh(){return{id:Catalog.id('draft'),trade:'',customer:{name:'',phone:'',address:'',company:''},items:[],quantities:{sashCount:1,concreteArea:60,paintArea:0,scaffoldArea:0,length:0},expense:0,note:'',updatedAt:new Date().toISOString()}}function saveDraft(){e.updatedAt=new Date().toISOString();Store.write(Store.keys.draft,e)}function start(){Catalog.init();e=Store.read(Store.keys.draft,null)||fresh();bind();render();if(Store.read('settings',{}).appsScriptUrl)Sync.pull().then(()=>render()).catch(()=>{})}function bind(){document.addEventListener('input',ev=>{if(ev.target.dataset.field){e.customer[ev.target.dataset.field]=ev.target.value;saveDraft()}if(ev.target.id==='expense'){e.expense=+ev.target.value||0;saveDraft();renderTotals()}if(ev.target.id==='note'){e.note=ev.target.value;saveDraft()}},true);window.addEventListener('beforeunload',saveDraft)}function render(){const has=!!e.trade||e.items.length>0;$('#start').classList.toggle('hide',has);$('#work').classList.toggle('hide',!has);renderTrades();if(!has)return;$('#tradeTitle').textContent=trades[e.trade]?.[0]||'見積';document.querySelectorAll('[data-field]').forEach(x=>x.value=e.customer[x.dataset.field]||'');$('#expense').value=e.expense||'';$('#note').value=e.note||'';renderQuantities();renderItems();renderTotals()}function renderTrades(){$('#tradeGrid').innerHTML=Object.entries(trades).map(([k,[n]])=>`<button class="trade" onclick="App.chooseTrade('${k}')">${n}<small>標準明細を一括追加</small></button>`).join('')}function chooseTrade(trade){const t=Catalog.templates().find(x=>x.trade===trade);if(!t)return;const masters=Catalog.masters();e.trade=trade;e.items=t.items.map(mid=>{const m=masters.find(x=>x.id===mid);return m?{id:Catalog.id('i'),masterId:m.id,name:m.name,desc:m.desc,qty:+m.qty||0,unit:m.unit,price:+m.price||0,group:m.group||'',linked:!!m.group}:null}).filter(Boolean);saveDraft();render()}function groupDefs(){const length={key:'length',label:'長さ',unit:'m',letter:''},hasLength=e.items.some(i=>i.group==='length');if(e.trade==='sash')return[{key:'sashCount',label:'箇所数',unit:'組',letter:''},...(hasLength?[length]:[])];if(e.trade==='concrete')return[{key:'concreteArea',label:'施工面積',unit:'㎡',letter:''},...(hasLength?[length]:[])];if(e.trade==='paint')return[{key:'paintArea',label:'塗装面積',unit:'㎡',letter:'A'},{key:'scaffoldArea',label:'足場面積',unit:'㎡',letter:'B'},...(hasLength?[length]:[])];return hasLength?[length]:[]}function renderQuantities(){const gs=groupDefs();$('#quantityPanel').classList.toggle('hide',!gs.length);$('#quantityBoxes').innerHTML=gs.map(g=>`<div class="field qbox"><label>${g.label}</label><input type="number" value="${e.quantities[g.key]??''}" oninput="App.applyGroup('${g.key}',this.value)"><span>${g.unit}</span><b>${g.letter}</b></div>`).join('')}function applyGroup(g,v){e.quantities[g]=+v||0;e.items.forEach(i=>{if(i.group===g&&i.linked)i.qty=e.quantities[g]});saveDraft();renderItems();renderTotals()}function setItem(i,k,v){const x=e.items[i];if(!x)return;if(['qty','price'].includes(k)){x[k]=+v||0;if(k==='qty')x.linked=false}else x[k]=v;saveDraft();renderItems();renderTotals()}function removeItem(i){e.items.splice(i,1);saveDraft();render()}function renderItems(){const body=$('#rows'),cards=$('#cards');$('#empty').classList.toggle('hide',e.items.length>0);body.innerHTML=e.items.map((x,i)=>`<tr><td><input value="${esc(x.name)}" oninput="App.setItem(${i},'name',this.value)"></td><td><input value="${esc(x.desc)}" oninput="App.setItem(${i},'desc',this.value)"></td><td><input type="number" value="${x.qty}" oninput="App.setItem(${i},'qty',this.value)"></td><td><select oninput="App.setItem(${i},'unit',this.value)">${units(x.unit)}</select></td><td><input type="number" value="${x.price}" oninput="App.setItem(${i},'price',this.value)"></td><td class="money">${Calc.yen(x.qty*x.price)}</td><td><button class="icon" onclick="App.removeItem(${i})">×</button></td></tr>`).join('');cards.innerHTML=e.items.map((x,i)=>`<div class="item-card"><div class="item-line" onclick="this.parentElement.classList.toggle('open')"><span class="item-name">${esc(x.name)}</span><input type="number" value="${x.qty}" onclick="event.stopPropagation()" oninput="App.setItem(${i},'qty',this.value)"><span class="unit">${esc(x.unit)}</span><input type="number" value="${x.price}" onclick="event.stopPropagation()" oninput="App.setItem(${i},'price',this.value)"><b class="money">${Calc.yen(x.qty*x.price)}</b><button class="icon" onclick="event.stopPropagation();App.removeItem(${i})">×</button></div><div class="detail"><div class="field wide"><label>品名</label><input value="${esc(x.name)}" oninput="App.setItem(${i},'name',this.value)"></div><div class="field wide"><label>概要</label><input value="${esc(x.desc)}" oninput="App.setItem(${i},'desc',this.value)"></div><div class="field"><label>単位</label><select oninput="App.setItem(${i},'unit',this.value)">${units(x.unit)}</select></div><div class="field"><label>数量連動</label><select oninput="App.setItem(${i},'group',this.value);App.setItem(${i},'linked',this.value!=='')"><option value="">なし</option>${groupOptions(x.group)}</select></div></div></div>`).join('')}function units(sel){return ['㎡','m','組','式','個','台','本','枚'].map(x=>`<option ${x===sel?'selected':''}>${x}</option>`).join('')}function groupOptions(sel){return ['sashCount','concreteArea','paintArea','scaffoldArea','length'].map(x=>`<option value="${x}" ${x===sel?'selected':''}>${x}</option>`).join('')}function renderTotals(){const t=Calc.totals(e);$('#workSum').textContent=Calc.yen(t.work);$('#subSum').textContent=Calc.yen(t.sub);$('#taxSum').textContent=Calc.yen(t.tax);$('#grandSum').textContent=Calc.yen(t.grand)}function modal(html){$('#modal').innerHTML=html;$('#modalBg').classList.add('open')}function close(){ $('#modalBg').classList.remove('open')}function backdrop(ev){if(ev.target===$('#modalBg'))close()}function openCustomer(){modal(`<h2>顧客を選ぶ・入力</h2><p class="notice">カレンダー連携は設定後にここへ接続します。現在は手入力できます。</p><div class="field"><label>氏名</label><input id="cName" value="${esc(e.customer.name)}"></div><div class="field"><label>電話番号</label><input id="cPhone" value="${esc(e.customer.phone)}"></div><div class="field"><label>住所</label><input id="cAddress" value="${esc(e.customer.address)}"></div><div class="field"><label>会社名</label><select id="cCompany"><option value="">選択なし</option><option value="中央技建">中央技建</option><option value="日建">日建</option><option value="エコロジー">エコロジー</option></select></div><div class="modal-actions"><button class="btn" onclick="App.close()">取消</button><button class="btn primary" onclick="App.saveCustomer()">反映</button></div>`)}function saveCustomer(){e.customer={name:$('#cName').value,phone:$('#cPhone').value,address:$('#cAddress').value,company:$('#cCompany').value};saveDraft();close();render()}function openWarehouse(){const ts=Catalog.templates();modal(`<div class="headrow"><h2>倉庫</h2><button class="btn sm" onclick="App.openMaster()">＋ 単品を作る</button></div>${ts.map(t=>`<div class="warehouse-card"><button class="btn" style="text-align:left;border:0;padding:0" onclick="App.addTemplate('${t.id}')"><strong>${esc(t.name)}</strong><small>${t.items.length}項目</small></button><button class="btn sm" onclick="App.editTemplate('${t.id}')">編集</button></div>`).join('')}<div class="modal-actions"><button class="btn" onclick="App.newTemplate()">＋ セットを作る</button><button class="btn" onclick="App.close()">閉じる</button></div>`)}function addTemplate(id){const t=Catalog.templates().find(x=>x.id===id),ms=Catalog.masters();t.items.forEach(mid=>{const m=ms.find(x=>x.id===mid);if(m)e.items.push({id:Catalog.id('i'),masterId:m.id,name:m.name,desc:m.desc,qty:+m.qty||0,unit:m.unit,price:+m.price||0,group:m.group||'',linked:!!m.group})});saveDraft();close();render()}function newTemplate(){editTemplate(null)}function editTemplate(id){const current=id?Catalog.templates().find(x=>x.id===id):{id:Catalog.id('t'),trade:e.trade||'other',name:'新しいセット',items:[]};const ms=Catalog.masters(),rows=current.items.map(mid=>clone(ms.find(m=>m.id===mid))).filter(Boolean);renderTemplateEditor(current,rows)}function renderTemplateEditor(t,rows){modal(`<h2>セットを編集</h2><div class="field"><label>セット名</label><input id="tName" value="${esc(t.name)}"></div><div class="field"><label>工種</label><select id="tTrade">${Object.entries(trades).map(([k,[n]])=>`<option value="${k}" ${k===t.trade?'selected':''}>${n}</option>`).join('')}</select></div><p class="notice">各行を直接編集します。削除は×、追加は下のボタンです。</p><div id="editRows" class="edit-rows">${rows.map((r,i)=>editRow(r,i)).join('')}</div><div class="modal-actions"><button class="btn" onclick="App.addEditorRow()">＋ 項目を追加</button><button class="btn primary" onclick="App.commitTemplate('${t.id}')">保存</button></div>`)}function editRow(r,i){return `<div class="edit-row" data-edit-row><input class="name" value="${esc(r.name)}" placeholder="品名"><input class="desc" value="${esc(r.desc)}" placeholder="概要"><input class="qty" type="number" value="${r.qty}"><select class="unit">${units(r.unit)}</select><input class="price" type="number" value="${r.price}"><select class="group"><option value="">連動なし</option>${groupOptions(r.group)}</select><button class="icon" onclick="this.parentElement.remove()">×</button></div>`}function addEditorRow(){$('#editRows').insertAdjacentHTML('beforeend',editRow({name:'',desc:'',qty:1,unit:'式',price:0,group:''},0))}function commitTemplate(id){const rows=[...document.querySelectorAll('[data-edit-row]')].map(r=>({id:Catalog.id('m'),trade:$('#tTrade').value,name:r.querySelector('.name').value.trim(),desc:r.querySelector('.desc').value.trim(),qty:+r.querySelector('.qty').value||0,unit:r.querySelector('.unit').value,price:+r.querySelector('.price').value||0,group:r.querySelector('.group').value})).filter(x=>x.name);if(!rows.length)return alert('項目を1つ以上入力してください');const masters=Catalog.masters();rows.forEach(x=>masters.push(x));Catalog.saveMasters(masters);const ts=Catalog.templates(),t={id,name:$('#tName').value.trim()||'名称未設定',trade:$('#tTrade').value,items:rows.map(x=>x.id)},i=ts.findIndex(x=>x.id===id);if(i>=0)ts[i]=t;else ts.push(t);Catalog.saveTemplates(ts);Sync.push().catch(()=>{});openWarehouse()}function openMaster(){modal(`<h2>単品を作る</h2><div class="field"><label>品名</label><input id="mName"></div><div class="field"><label>概要</label><input id="mDesc"></div><div class="customer"><div class="field"><label>数量</label><input id="mQty" type="number" value="1"></div><div class="field"><label>単位</label><select id="mUnit">${units('式')}</select></div><div class="field"><label>単価</label><input id="mPrice" type="number" value="0"></div></div><div class="field"><label>数量連動</label><select id="mGroup"><option value="">なし</option>${groupOptions('')}</select></div><div class="modal-actions"><button class="btn" onclick="App.openWarehouse()">戻る</button><button class="btn primary" onclick="App.commitMaster()">保存</button></div>`)}function commitMaster(){const name=$('#mName').value.trim();if(!name)return alert('品名を入力してください');const ms=Catalog.masters();ms.push({id:Catalog.id('m'),trade:e.trade||'other',name,desc:$('#mDesc').value,qty:+$('#mQty').value||0,unit:$('#mUnit').value,price:+$('#mPrice').value||0,group:$('#mGroup').value});Catalog.saveMasters(ms);Sync.push().catch(()=>{});openWarehouse()}function saveCase(){const name=prompt('案件名',e.caseName||e.customer.name||trades[e.trade]?.[0]||'見積');if(!name)return;e.caseName=name;const cases=Store.read(Store.keys.cases,[]),i=cases.findIndex(x=>x.id===e.id);if(i>=0)cases[i]=clone(e);else cases.unshift(clone(e));Store.write(Store.keys.cases,cases);saveDraft();alert('保存済み案件に登録しました')}function openCases(){const cs=Store.read(Store.keys.cases,[]);modal(`<h2>案件</h2>${cs.length?cs.map((x,i)=>`<div class="warehouse-card"><button class="btn" style="border:0;text-align:left;padding:0" onclick="App.loadCase(${i})"><strong>${esc(x.caseName||x.customer?.name||'名称未設定')}</strong><small>${esc(x.updatedAt||'')}</small></button><button class="btn sm danger" onclick="App.deleteCase(${i})">削除</button></div>`).join(''):'<div class="empty">保存済み案件はありません</div>'}<div class="modal-actions"><button class="btn" onclick="App.close()">閉じる</button></div>`)}function loadCase(i){e=clone(Store.read(Store.keys.cases,[])[i]);saveDraft();close();render()}function deleteCase(i){const cs=Store.read(Store.keys.cases,[]);cs.splice(i,1);Store.write(Store.keys.cases,cs);openCases()}function newEstimate(){if(!confirm('作業中の見積を消して新規作成しますか？'))return;e=fresh();saveDraft();render()}function print(){const t=Calc.totals(e),rows=e.items.map(x=>`<tr><td>${esc(x.name)}</td><td>${esc(x.desc)}</td><td class="r">${x.qty}</td><td>${esc(x.unit)}</td><td class="r">${Calc.yen(x.price)}</td><td class="r">${Calc.yen(x.qty*x.price)}</td></tr>`).join('');const w=window.open('','_blank');w.document.write(`<!doctype html><meta charset="utf-8"><title>御見積書</title><style>body{font-family:sans-serif;margin:18mm}h1{text-align:center}table{border-collapse:collapse;width:100%}th,td{border:1px solid #888;padding:6px}th{background:#eee}.r{text-align:right}.total{font-size:18px;font-weight:bold;text-align:right}@media print{body{margin:10mm}}</style><h1>御 見 積 書</h1><p>${esc(e.customer.name)} 様</p><p>工事場所：${esc(e.customer.address)}<br>電話：${esc(e.customer.phone)}</p><table><thead><tr><th>工事項目</th><th>概要</th><th>数量</th><th>単位</th><th>単価</th><th>金額</th></tr></thead><tbody>${rows}</tbody></table><p class="total">合計　${Calc.yen(t.grand)}</p><p>備考：${esc(e.note)}</p><script>window.print()<\/script>`);w.document.close()}return{start,chooseTrade,applyGroup,setItem,removeItem,openWarehouse,addTemplate,editTemplate,newTemplate,addEditorRow,commitTemplate,openMaster,commitMaster,openCustomer,saveCustomer,saveCase,openCases,loadCase,deleteCase,newEstimate,print,close,backdrop}})();
+/* App.start() runs after the final UI and sync overrides are installed. */
+</script>
+<script>
+/* Google同期の設定画面。通信不能でもローカルの作業・保存は継続する。 */
+App.openSync=function(){const url=Store.read('settings',{}).appsScriptUrl||'';document.querySelector('#modal').innerHTML=`<h2>共有マスター同期</h2><div class="field"><label>Apps Script WebアプリURL</label><input id="syncUrl" value="${url.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="https://script.google.com/macros/s/.../exec"></div><p class="notice">未設定でも、この端末では見積作成を続けられます。</p><div class="modal-actions"><button class="btn" onclick="App.pullSync()">Googleから読込</button><button class="btn primary" onclick="App.saveSync()">URLを保存して送信</button></div>`;document.querySelector('#modalBg').classList.add('open')};
+App.saveSync=async function(){Store.write('settings',{appsScriptUrl:document.querySelector('#syncUrl').value.trim()});try{await Sync.push();alert('共有マスターへ送信しました');App.close()}catch(err){alert('URLは保存しました。送信は未完了です。'+err.message)}};
+App.pullSync=async function(){try{await Sync.pull();App.close();location.reload()}catch(err){alert('読込できません。'+err.message)}};
+</script>
+<style>.edit-row{grid-template-columns:26px 1.3fr 1fr 52px 52px 70px 90px 26px 26px}@media(max-width:760px){.edit-row{grid-template-columns:24px 1fr 45px 45px 62px 24px 24px}.edit-row .desc,.edit-row .group{display:none}}</style>
+<script>
+/* セット編集は独立した行データで扱う。長押しや旧UIには依存しない。 */
+App.editTemplate=function(id){const ts=Catalog.templates(),base=id?ts.find(x=>x.id===id):{id:Catalog.id('t'),trade:'other',name:'新しいセット',items:[]},ms=Catalog.masters(),rows=(base.items||[]).map(mid=>ms.find(m=>m.id===mid)).filter(Boolean);const row=x=>`<div class="edit-row" data-clean-row><button class="btn sm" onclick="App.moveCleanRow(this,-1)">↑</button><input class="name" value="${String(x.name||'').replace(/"/g,'&quot;')}" placeholder="品名"><input class="desc" value="${String(x.desc||'').replace(/"/g,'&quot;')}" placeholder="概要"><input class="qty" type="number" value="${x.qty||0}"><select class="unit"><option>${x.unit||'式'}</option><option>㎡</option><option>m</option><option>組</option><option>式</option><option>個</option></select><input class="price" type="number" value="${x.price||0}"><select class="group"><option value="${x.group||''}">${x.group||'連動なし'}</option><option value="">連動なし</option><option value="sashCount">サッシ数</option><option value="concreteArea">コンクリ面積</option><option value="paintArea">塗装面積</option><option value="scaffoldArea">足場面積</option></select><button class="btn sm" onclick="App.moveCleanRow(this,1)">↓</button><button class="icon" onclick="this.parentElement.remove()">×</button></div>`;document.querySelector('#modal').innerHTML=`<h2>セットを編集</h2><div class="field"><label>セット名</label><input id="cleanTName" value="${String(base.name||'').replace(/"/g,'&quot;')}"></div><div class="field"><label>工種</label><select id="cleanTTrade"><option value="sash">サッシ工事</option><option value="bath">ユニットバス工事</option><option value="concrete">コンクリ打設工事</option><option value="paint">塗装工事</option><option value="water">水回り工事</option><option value="other">その他</option></select></div><div id="cleanRows" class="edit-rows">${rows.map(row).join('')}</div><div class="modal-actions"><button class="btn" onclick="App.addCleanRow()">＋ 項目を追加</button><button class="btn primary" onclick="App.commitCleanTemplate('${base.id}')">保存</button></div>`;document.querySelector('#cleanTTrade').value=base.trade||'other';document.querySelector('#modalBg').classList.add('open')};
+App.newTemplate=function(){App.editTemplate(null)};App.addCleanRow=function(){document.querySelector('#cleanRows').insertAdjacentHTML('beforeend',`<div class="edit-row" data-clean-row><button class="btn sm" onclick="App.moveCleanRow(this,-1)">↑</button><input class="name" placeholder="品名"><input class="desc" placeholder="概要"><input class="qty" type="number" value="1"><select class="unit"><option>式</option><option>㎡</option><option>m</option><option>組</option><option>個</option></select><input class="price" type="number" value="0"><select class="group"><option value="">連動なし</option><option value="sashCount">サッシ数</option><option value="concreteArea">コンクリ面積</option><option value="paintArea">塗装面積</option><option value="scaffoldArea">足場面積</option></select><button class="btn sm" onclick="App.moveCleanRow(this,1)">↓</button><button class="icon" onclick="this.parentElement.remove()">×</button></div>`)};App.moveCleanRow=function(btn,d){const row=btn.closest('[data-clean-row]'),target=d<0?row.previousElementSibling:row.nextElementSibling;if(target)row.parentElement.insertBefore(d<0?row:target,d<0?target:row)};App.commitCleanTemplate=async function(id){const trade=document.querySelector('#cleanTTrade').value,rows=[...document.querySelectorAll('[data-clean-row]')].map(r=>({id:Catalog.id('m'),trade,name:r.querySelector('.name').value.trim(),desc:r.querySelector('.desc').value.trim(),qty:+r.querySelector('.qty').value||0,unit:r.querySelector('.unit').value,price:+r.querySelector('.price').value||0,group:r.querySelector('.group').value})).filter(x=>x.name);if(!rows.length)return alert('項目を1つ以上入力してください');const ms=Catalog.masters();ms.push(...rows);Catalog.saveMasters(ms);const ts=Catalog.templates(),t={id,name:document.querySelector('#cleanTName').value.trim()||'名称未設定',trade,items:rows.map(x=>x.id)},i=ts.findIndex(x=>x.id===id);if(i>=0)ts[i]=t;else ts.push(t);Catalog.saveTemplates(ts);try{await Sync.push()}catch(_){ }App.openWarehouse()};
+/* Standard templates are expanded with their current base quantity immediately. */
+const cleanChooseTrade=App.chooseTrade;
+App.chooseTrade=function(trade){
+  cleanChooseTrade(trade);
+  if(trade==='sash') App.applyGroup('sashCount',Store.read('draft',{}).quantities?.sashCount||1);
+  if(trade==='concrete') App.applyGroup('concreteArea',Store.read('draft',{}).quantities?.concreteArea||60);
+  if(trade==='paint'){
+    App.applyGroup('paintArea',Store.read('draft',{}).quantities?.paintArea||0);
+    App.applyGroup('scaffoldArea',Store.read('draft',{}).quantities?.scaffoldArea||0);
+  }
+};
+</script>
+<script>
+/* Public endpoint only; the current device keeps its own editable setting. */
+const cleanSyncSettings=Store.read('settings',{});
+if(!cleanSyncSettings.appsScriptUrl) Store.write('settings',{...cleanSyncSettings,appsScriptUrl:CLEAN_APPS_SCRIPT_URL});
+</script>
+<script>
+/* Apps Script has no CORS response headers. Read by JSONP; write with a simple POST. */
+Sync.pull=()=>new Promise((resolve,reject)=>{
+  const localTemplates=Catalog.templates().map(t=>JSON.parse(JSON.stringify(t)));
+  const callback='mitsumoriCleanJsonp_'+Date.now();
+  const url=(Store.read('settings',{}).appsScriptUrl||CLEAN_APPS_SCRIPT_URL)+'?action=pullMasters&callback='+callback;
+  const script=document.createElement('script');
+  const timer=setTimeout(()=>finish(new Error('Googleからの読込がタイムアウトしました')),15000);
+  function finish(error,data){clearTimeout(timer);delete window[callback];script.remove();error?reject(error):resolve(data)}
+  window[callback]=result=>{if(!result||!result.ok)return finish(new Error(result?.error||'読込に失敗しました'));const data=result.data||{};const masters=(Array.isArray(data.masters)?data.masters:[]).filter(m=>m&&m.id&&m.name);const ids=new Set(masters.map(m=>m.id));const templates=(Array.isArray(data.templates)?data.templates:[]).map(t=>({...t,items:(t.items||[]).filter(id=>ids.has(id))})).filter(t=>t.items.length);const localById=new Map(localTemplates.map(t=>[t.id,t]));const remoteIds=new Set(templates.map(t=>t.id));let restored=false;const merged=templates.map(t=>{const local=localById.get(t.id),startTile=!!(local?.startTile||String(local?.trade||'').startsWith('start:')||String(t.trade||'').startsWith('start:'));if(startTile!==!!t.startTile)restored=true;return {...t,startTile}});localTemplates.filter(t=>!remoteIds.has(t.id)).forEach(t=>{merged.push(t);restored=true});if(masters.length&&merged.length){Catalog.saveMasters(masters);Catalog.saveTemplates(merged);if(restored)Sync.push().catch(()=>{})}finish(null,data)};
+  script.onerror=()=>finish(new Error('Googleへ接続できません'));
+  script.src=url;document.head.appendChild(script);
+});
+Sync.push=async()=>{
+  const url=Store.read('settings',{}).appsScriptUrl||CLEAN_APPS_SCRIPT_URL;
+  await fetch(url,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'pushMasters',data:{masters:Catalog.masters(),templates:Catalog.templates()}})});
+  return {queued:true};
+};
+</script>
+<script>
+/* A previous malformed shared template has no resolvable master IDs. Recover only that broken cache. */
+const cleanCachedTemplates=Catalog.templates();
+if(cleanCachedTemplates.length&&!cleanCachedTemplates.some(t=>Array.isArray(t.items)&&t.items.length)){
+  localStorage.removeItem('mitsumori.clean.masters');
+  localStorage.removeItem('mitsumori.clean.templates');
+  location.reload();
+}
+
+</script><style>.warehouse-card>.btn.sm{position:relative;z-index:2;min-height:40px;min-width:68px}@media(max-width:760px){.modal .edit-row{display:flex;flex-wrap:wrap;gap:8px;padding:10px;border:1px solid var(--line);border-radius:10px;background:#fafcff}.modal .edit-row input,.modal .edit-row select{font-size:16px;min-height:46px;padding:9px}.modal .edit-row .name{flex:1 1 calc(100% - 92px);min-width:150px}.modal .edit-row .desc,.modal .edit-row .group{display:block;flex:1 1 100%}.modal .edit-row .qty{width:70px;flex:0 0 70px}.modal .edit-row .unit{width:76px;flex:0 0 76px}.modal .edit-row .price{flex:1 1 115px;min-width:115px}.modal .edit-row .btn.sm,.modal .edit-row .icon{min-width:44px;min-height:44px;font-size:17px;padding:6px}.modal .edit-row .icon{font-size:24px}}</style>
+<script>
+/* Warehouse: standalone items are selectable, and edited rows keep their master IDs. */
+(function(){
+const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const units=['式','㎡','m','組','個','㎥'],groups=[['','連動なし'],['sashCount','サッシ数'],['concreteArea','コンクリ面積'],['paintArea','塗装面積'],['scaffoldArea','足場面積'],['length','長さ']];
+const modal=html=>{document.querySelector('#modal').innerHTML=html;document.querySelector('#modalBg').classList.add('open')};
+const unitOptions=v=>units.map(x=>'<option'+(x===v?' selected':'')+'>'+x+'</option>').join('');
+const groupOptions=v=>groups.map(x=>'<option value="'+x[0]+'"'+(x[0]===v?' selected':'')+'>'+x[1]+'</option>').join('');
+const row=x=>'<div class="edit-row" data-clean-row data-master-id="'+esc(x.id||'')+'"><button class="btn sm" type="button" onclick="App.moveCleanRow(this,-1)">↑</button><input class="name" value="'+esc(x.name)+'" placeholder="品名"><input class="desc" value="'+esc(x.desc)+'" placeholder="概要"><input class="qty" type="number" inputmode="decimal" value="'+(+x.qty||0)+'"><select class="unit">'+unitOptions(x.unit||'式')+'</select><input class="price" type="number" inputmode="numeric" value="'+(+x.price||0)+'"><select class="group">'+groupOptions(x.group||'')+'</select><button class="btn sm" type="button" onclick="App.moveCleanRow(this,1)">↓</button><button class="icon" type="button" onclick="this.parentElement.remove()">×</button></div>';
+App.openWarehouse=function(){const ts=Catalog.templates(),ms=Catalog.masters();modal('<h2>倉庫</h2><div class="warehouse-head"><span>セット</span><button class="btn sm" onclick="App.newTemplate()">＋ セットを作る</button></div><div class="warehouse-list">'+ts.map(t=>'<div class="warehouse-card"><button class="warehouse-title" onclick="App.addTemplate(\''+t.id+'\')"><strong>'+esc(t.name)+'</strong><small>'+(t.items||[]).length+'項目 · タップで追加</small></button><button class="btn sm" onclick="App.editTemplate(\''+t.id+'\')">編集</button></div>').join('')+'</div><div class="warehouse-head standalone-head"><span>単品</span><button class="btn sm" onclick="App.openMaster()">＋ 単品を作る</button></div><div class="master-list">'+ms.map(m=>'<button class="master-card" onclick="App.addMasterToEstimate(\''+m.id+'\')"><strong>'+esc(m.name)+'</strong><small>'+esc(m.unit||'式')+' · ¥'+Number(m.price||0).toLocaleString()+' · タップで追加</small></button>').join('')+'</div><div class="modal-actions"><button class="btn" onclick="App.close()">閉じる</button></div>')};
+App.addMasterToEstimate=function(id){if(!Catalog.masters().some(m=>m.id===id))return;const ts=Catalog.templates(),temp='single-'+Date.now();Catalog.saveTemplates(ts.concat([{id:temp,trade:'other',name:'一時単品',items:[id]}]));App.addTemplate(temp);Catalog.saveTemplates(ts)};
+App.editTemplate=function(id){const ts=Catalog.templates(),base=id?ts.find(t=>t.id===id):{id:Catalog.id('t'),trade:'other',name:'新しいセット',items:[]},ms=Catalog.masters(),rows=(base?.items||[]).map(mid=>ms.find(m=>m.id===mid)).filter(Boolean);modal('<h2>セットを編集</h2><div class="field"><label>セット名</label><input id="cleanTName" value="'+esc(base?.name||'')+'"></div><div class="field"><label>工種</label><select id="cleanTTrade"><option value="sash">サッシ工事</option><option value="bath">ユニットバス工事</option><option value="concrete">コンクリ打設工事</option><option value="paint">塗装工事</option><option value="water">水回り工事</option><option value="other">その他</option></select></div><div id="cleanRows" class="edit-rows">'+rows.map(row).join('')+'</div><div class="modal-actions"><button class="btn" onclick="App.addCleanRow()">＋ 項目を追加</button><button class="btn primary" onclick="App.commitCleanTemplate(\''+base.id+'\')">保存</button></div>');document.querySelector('#cleanTTrade').value=base?.trade||'other'};
+App.newTemplate=()=>App.editTemplate(null);App.addCleanRow=()=>document.querySelector('#cleanRows').insertAdjacentHTML('beforeend',row({qty:1,unit:'式',price:0,group:''}));App.moveCleanRow=function(btn,d){const r=btn.closest('[data-clean-row]'),t=d<0?r.previousElementSibling:r.nextElementSibling;if(t)r.parentElement.insertBefore(d<0?r:t,d<0?t:r)};
+App.commitCleanTemplate=async function(id){const trade=document.querySelector('#cleanTTrade').value,ms=Catalog.masters(),positions=new Map(ms.map((m,i)=>[m.id,i]));const rows=[...document.querySelectorAll('[data-clean-row]')].map(r=>{let itemId=r.dataset.masterId;if(!itemId||!positions.has(itemId)){itemId=Catalog.id('m');positions.set(itemId,ms.length);ms.push({id:itemId})}const next={id:itemId,trade,name:r.querySelector('.name').value.trim(),desc:r.querySelector('.desc').value.trim(),qty:+r.querySelector('.qty').value||0,unit:r.querySelector('.unit').value,price:+r.querySelector('.price').value||0,group:r.querySelector('.group').value};ms[positions.get(itemId)]=next;return next}).filter(x=>x.name);if(!rows.length)return alert('項目を1つ以上入力してください');Catalog.saveMasters(ms);const ts=Catalog.templates(),t={id,name:document.querySelector('#cleanTName').value.trim()||'名称未設定',trade,items:rows.map(x=>x.id)},i=ts.findIndex(x=>x.id===id);if(i>=0)ts[i]=t;else ts.push(t);Catalog.saveTemplates(ts);try{await Sync.push()}catch(_){}App.openWarehouse()};
+const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.querySelector('#mName');if(!f||!f.value.trim())return oldCommit();oldCommit();setTimeout(()=>App.openWarehouse(),0)};
+})();
+</script>
+<style>
+.warehouse-head{display:flex;align-items:center;justify-content:space-between;margin:14px 0 7px;font-weight:800}.warehouse-list{display:grid;gap:8px}.warehouse-card{display:flex;align-items:stretch;gap:7px}.warehouse-title{flex:1;text-align:left;padding:10px;border:1px solid var(--line);background:#fff;border-radius:10px;min-width:0}.warehouse-title strong,.master-card strong{display:block}.warehouse-title small,.master-card small{display:block;margin-top:3px;color:var(--muted);font-size:12px}.standalone-head{margin-top:19px}.master-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.master-card{text-align:left;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px;min-width:0}@media(max-width:760px){.warehouse-head{margin:16px 0 8px;font-size:17px}.warehouse-card{gap:8px}.warehouse-title{min-height:58px;padding:10px}.warehouse-title strong,.master-card strong{font-size:16px}.warehouse-card>.btn.sm{min-width:64px;min-height:52px}.master-list{grid-template-columns:1fr}.master-card{min-height:52px;padding:10px 12px}.master-card small{font-size:13px}}
+</style>
+
+<script>
+/* 旧完成版の二頁見積書を、CLEANの保存データへ接続する。 */
+(function(){
+  const oldOpenCustomer=App.openCustomer;
+  App.openCustomer=function(){
+    oldOpenCustomer();
+    const select=document.querySelector('#cCompany');
+    if(select)select.value=Store.read('draft',{}).customer?.company||'';
+  };
+  const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const yen=v=>'¥'+Number(v||0).toLocaleString('ja-JP');
+  const wareki=()=>{const d=new Date(),y=d.getFullYear(),m=d.getMonth()+1,day=d.getDate();return '令和'+(y-2018)+'年'+m+'月'+day+'日'};
+  const tradeNames={sash:'サッシ工事',bath:'ユニットバス工事',concrete:'コンクリ打設工事',paint:'塗装工事',water:'水回り工事'};
+  App.print=function(){
+    const estimate=Store.read('draft',{customer:{},items:[]}),customer=estimate.customer||{},totals=Calc.totals(estimate);
+    const recipient=customer.name||'';
+    const issuerCompany=customer.company||'';
+    const construction=tradeNames[estimate.trade]||estimate.caseName||'各種工事';
+    const rows=(estimate.items||[]).map(item=>'<tr><td>'+esc(item.name)+'</td><td>'+esc(item.desc||'')+'</td><td class="r">'+esc(item.qty)+'</td><td class="c">'+esc(item.unit||'')+'</td><td class="r">'+yen(item.price)+'</td><td class="r">'+yen((+item.qty||0)*(+item.price||0))+'</td></tr>').join('');
+    const detailRows=(estimate.items||[]).length+1,targetRows=Math.max(12,detailRows),density=Math.min(1,12/detailRows),tableFont=(12.75*density).toFixed(2),headerFont=(11.25*density).toFixed(2),rowHeight=Math.max(10,Math.round(26*density)),cellPad=Math.max(1,Math.round(2*density)),grandFont=(15.75*density).toFixed(2),fitCss='.meisai .m-tbl{font-size:'+tableFont+'pt}.meisai .m-tbl th{font-size:'+headerFont+'pt;padding:'+cellPad+'px 3px}.meisai .m-tbl td,.meisai .m-tbl .blank td{height:'+rowHeight+'px;padding:'+cellPad+'px 4px}.meisai .grand-r td{font-size:'+grandFont+'pt}';
+    const blanks=Array.from({length:Math.max(0,targetRows-detailRows)},()=>'<tr class="blank"><td></td><td></td><td></td><td></td><td></td><td></td></tr>').join('');
+    const html='<!doctype html><html lang="ja"><head><meta charset="utf-8"><title>御見積書</title><style>'+
+      '@page{size:A4 landscape;margin:8mm 10mm}*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Noto Sans JP","Yu Gothic",sans-serif;color:#000;background:#fff;font-size:15pt}.page{width:100%;min-height:190mm;page-break-after:always}.page:last-of-type{page-break-after:auto}.print-btn{display:flex;justify-content:center;gap:12px;padding:12px;background:#f0ede6;border-bottom:3px solid #8b7355}.print-btn button{padding:9px 20px;font-size:15px;font-weight:900;border:3px solid #1a1a2e;background:#fff}.print-btn .go{background:#1a1a2e;color:#fff}@media print{.print-btn{display:none!important}.page{min-height:0}}'+
+      '.hyoshi{padding:4mm 7mm}.h-title-box{border:4px solid #000;text-align:center;padding:5px 0;margin-bottom:8px}.h-title{font-size:27pt;font-weight:700;letter-spacing:.3em}.h-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}.client-name{font-size:22.5pt;font-weight:700;border-bottom:4px solid #000;padding-bottom:2px;min-width:180px;display:inline-block}.co-block{text-align:right;font-size:12.75pt;line-height:1.8}.co-name{font-size:15.75pt;font-weight:700}.kingaku-wrap{display:inline-block;padding:5px 0;margin:6px 0;min-width:280px}.k-label{font-size:17.55pt}.k-num{font-size:19.5pt;border-bottom:4px solid #000;padding-bottom:2px;min-width:260px;display:inline-block}.k-sub{font-size:11.25pt;color:#555}.hosho-box{text-align:center;font-size:20.25pt;font-weight:700;margin-top:10px;padding:6px 0;letter-spacing:.05em}.koji-tbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.75pt}.koji-tbl td{padding:4px 6px;border:2px solid #555}.koji-tbl .lbl{background:#e7f2ff;width:18%;font-weight:700;white-space:nowrap}.koji-name-big{font-size:18pt;font-weight:700}'+
+      '.meisai{padding:3mm 7mm}.m-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}.m-title{font-size:19.5pt;font-weight:700;letter-spacing:.1em;border-bottom:4px solid #000;padding-bottom:3px}.m-tbl{width:100%;border-collapse:collapse;font-size:12.75pt}.m-tbl th{background:#e7f2ff;color:#000;padding:4px 3px;text-align:center;font-size:11.25pt;border:2px solid #000;font-weight:700}.m-tbl td{border:2px solid #555;padding:2px 4px;height:26px}.m-tbl .r{text-align:right}.m-tbl .c{text-align:center}.m-tbl tbody tr:nth-child(odd) td{background:#eef7ff}.m-tbl .blank td{height:26px}.exp-r td{background:#e8f3ff!important}.sum-r td{background:#dceafa!important;font-weight:700}.grand-r td{background:#1a1a2e!important;color:#fff!important;font-weight:700;font-size:15.75pt}'+fitCss+
+      '</style></head><body><div class="print-btn"><button class="go" onclick="window.print()">印刷 / PDF保存</button><button onclick="window.close()">閉じる</button></div>'+
+      '<section class="page hyoshi"><div class="h-title-box"><div class="h-title">御　見　積　書</div></div><div class="h-top"><div style="flex:1;margin-right:12px"><div style="margin-bottom:6px"><span class="client-name">'+esc(recipient)+'</span>　御中</div><div style="font-size:12.75pt;margin-bottom:8px">下記の通り御見積もり申し上げます。</div><div class="kingaku-wrap"><div class="k-label">御見積書金額</div><div class="k-num">'+yen(totals.grand)+'.－</div><div class="k-sub">消費税含</div></div></div><div class="co-block"><div style="margin-bottom:4px">'+wareki()+'</div><div class="co-name">'+esc(issuerCompany)+'</div></div></div>'+
+      '<table class="koji-tbl"><tr><td class="lbl">工　事　名</td><td colspan="3" class="koji-name-big">'+esc(construction)+'</td></tr><tr><td class="lbl">工事場所</td><td>'+esc(customer.address||'')+'</td><td class="lbl" style="width:14%">工事期間</td><td></td></tr><tr><td class="lbl">工事概要</td><td colspan="3">'+esc(construction)+'</td></tr><tr><td class="lbl">その他</td><td colspan="3" style="font-size:11.25pt;line-height:1.9">①上記工事に関しては民間（四会）連合協定工事請負契約約款に準拠します。<br>②資材・流用資材など他置き場の確保をお願いします。<br>③什器等の移動は、別途と致します。<br>④工事用電力・用水御支給願います。</td></tr><tr><td class="lbl">支払条件</td><td colspan="3">完工確認後1週間以内、または双方協議の上。</td></tr></table><div class="hosho-box">&lt;&lt;10年間メンテナンス保証工事&gt;&gt;</div>'+(estimate.note?'<div style="margin-top:8px;font-size:12pt;color:#555;border-top:1px solid #ddd;padding-top:5px">【備考】'+esc(estimate.note)+'</div>':'')+'</section>'+
+      '<section class="page meisai"><div class="m-header"><div class="m-title">内　訳　明　細　書</div><div style="font-size:12.75pt">'+esc(recipient)+'　御中　／　'+esc(construction)+'</div></div><table class="m-tbl"><thead><tr><th style="width:28%">工事項目</th><th style="width:22%">概要（形状・寸法）</th><th style="width:9%">数量</th><th style="width:8%">単位</th><th style="width:15%">単価</th><th style="width:15%">金額</th></tr></thead><tbody>'+rows+'<tr class="exp-r"><td>諸経費</td><td></td><td class="r">1</td><td class="c">式</td><td></td><td class="r">'+yen(totals.expense)+'</td></tr>'+blanks+'</tbody></table><table class="m-tbl" style="margin-top:0;width:50%;margin-left:auto"><tbody><tr class="sum-r"><td class="r" style="width:70%">小　　　計</td><td class="r">'+yen(totals.sub)+'</td></tr><tr class="sum-r"><td class="r">消費税（10%）</td><td class="r">'+yen(totals.tax)+'</td></tr><tr class="grand-r"><td class="r">合　計　金　額</td><td class="r">￥'+Number(totals.grand||0).toLocaleString('ja-JP')+'</td></tr></tbody></table><div style="font-size:11.25pt;color:#777;margin-top:6px;text-align:right">※上記金額は消費税込みの御見積金額です。</div></section></body></html>';
+    const win=window.open('','_blank');
+    if(!win){alert('印刷画面を開けませんでした。ブラウザのポップアップを許可してください。');return}
+    win.document.open();win.document.write(html);win.document.close();
+  };
+})();
+</script>
+
+<script>
+/* セットを起動画面の工事として登録する。既存5工種は変更しない。 */
+(function(){
+  const startTrade=id=>'start:'+id;
+  function templateById(id){return Catalog.templates().find(t=>t.id===id)}
+  function renderStartTiles(){
+    const grid=document.querySelector('#tradeGrid');
+    if(!grid)return;
+  const starts=Catalog.templates().filter(t=>t.startTile||String(t.trade||'').startsWith('start:'));
+    const sig=starts.map(t=>t.id+'|'+t.name+'|'+t.items.length).join('~');
+    if(grid.dataset.startSetSignature===sig&&starts.every(t=>grid.querySelector('[data-start-template="'+t.id+'"]')))return;
+    grid.querySelectorAll('.custom-start-set').forEach(node=>node.remove());
+    starts.forEach(t=>{
+      const button=document.createElement('button');
+      button.className='trade custom-start-set';
+      button.dataset.startTemplate=t.id;
+      button.type='button';
+      button.innerHTML='<span>'+String(t.name||'名称未設定').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))+'</span><small>標準明細を一括追加</small>';
+      button.onclick=()=>App.chooseStartSet(t.id);
+      grid.appendChild(button);
+    });
+    grid.dataset.startSetSignature=sig;
+    const draft=Store.read('draft',{});
+    const current=Catalog.templates().find(t=>t.trade===draft.trade&&t.startTile);
+    if(current&&document.querySelector('#tradeTitle'))document.querySelector('#tradeTitle').textContent=current.name;
+  }
+  const grid=document.querySelector('#tradeGrid');
+  if(grid)new MutationObserver(()=>queueMicrotask(renderStartTiles)).observe(grid,{childList:true});
+  App.chooseStartSet=function(id){
+    const t=templateById(id);
+    if(!t)return;
+    App.chooseTrade(t.trade||startTrade(id));
+    const title=document.querySelector('#tradeTitle');
+    if(title)title.textContent=t.name;
+  };
+  const priorEdit=App.editTemplate;
+  App.editTemplate=function(id){
+    priorEdit(id);
+    const current=id?templateById(id):null;
+    const trade=document.querySelector('#cleanTTrade');
+    if(!trade)return;
+  const checked=!!current&&(current.startTile||String(current.trade||'').startsWith('start:'));
+    const token=startTrade(id||'new');
+    if(checked&&!trade.querySelector('option[value="'+token+'"]')){
+      const option=document.createElement('option');
+      option.value=token;option.textContent='スタート画面用';
+      trade.appendChild(option);trade.value=token;
+    }
+    const field=document.createElement('label');
+    field.className='start-set-toggle';
+    field.innerHTML='<input id="cleanStartSet" type="checkbox" '+(checked?'checked':'')+'> スタート画面の工事として表示';
+    trade.closest('.field').insertAdjacentElement('afterend',field);
+  };
+  const priorCommit=App.commitCleanTemplate;
+  App.commitCleanTemplate=async function(id){
+    const start=!!document.querySelector('#cleanStartSet')?.checked;
+    const trade=document.querySelector('#cleanTTrade');
+    const token=startTrade(id);
+    if(start&&trade){
+      if(!trade.querySelector('option[value="'+token+'"]')){
+        const option=document.createElement('option');option.value=token;option.textContent='スタート画面用';trade.appendChild(option);
+      }
+      trade.value=token;
+    }else if(trade&&trade.value.startsWith('start:')){
+      trade.value='other';
+    }
+    await priorCommit(id);
+    const templates=Catalog.templates(),index=templates.findIndex(t=>t.id===id);
+    if(index>=0){
+      templates[index]={...templates[index],startTile:start};
+      Catalog.saveTemplates(templates);
+      try{await Sync.push()}catch(_){}
+    }
+    renderStartTiles();
+  };
+  renderStartTiles();
+})();
+</script>
+<style>
+.start-set-toggle{display:flex;align-items:center;gap:8px;margin:10px 0;font-weight:700;cursor:pointer}.start-set-toggle input{width:20px;height:20px}.custom-start-set{border-color:#2563eb!important;background:#eff6ff!important}
+</style>
+<script>
+/* Calendar customer picker.  Calendar values always come from the selected event only. */
+(function(){
+  const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const jstDate=()=>{const p=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Tokyo',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());const v=Object.fromEntries(p.map(x=>[x.type,x.value]));return v.year+'-'+v.month+'-'+v.day};
+  const companyOptions=value=>['','中央技建','日建','エコロジー'].map(x=>'<option value="'+x+'"'+(x===value?' selected':'')+'>'+ (x||'選択なし')+'</option>').join('');
+  const managerOptions=value=>['','荒川','上原','股部'].map(x=>'<option value="'+x+'"'+(x===value?' selected':'')+'>'+ (x||'選択なし')+'</option>').join('');
+  let events=[],savedManager=Store.read('draft',{}).customer?.manager||'';
+  const keepManager=()=>{const draft=Store.read('draft',null);if(!draft)return;if(!draft.customer)draft.customer={};if(savedManager||draft.customer.manager){draft.customer.manager=savedManager||draft.customer.manager||'';Store.write('draft',draft)}};
+  const listCalendar=date=>new Promise((resolve,reject)=>{
+    const base=Store.read('settings',{}).appsScriptUrl||CLEAN_APPS_SCRIPT_URL;
+    if(!base)return reject(new Error('Apps Script URLが未設定です'));
+    const callback='mitsumoriCalendarJsonp_'+Date.now()+'_'+Math.floor(Math.random()*10000);
+    const script=document.createElement('script');
+    const done=(error,data)=>{clearTimeout(timer);delete window[callback];script.remove();error?reject(error):resolve(data)};
+    const timer=setTimeout(()=>done(new Error('Googleカレンダーの読込がタイムアウトしました')),15000);
+    window[callback]=result=>{if(!result?.ok)return done(new Error(result?.error||'Googleカレンダーを読込できません'));done(null,result.data)};
+    script.onerror=()=>done(new Error('Googleカレンダーへ接続できません'));
+    script.src=base+(base.includes('?')?'&':'?')+'action=calendarEvents&date='+encodeURIComponent(date)+'&callback='+callback;
+    document.head.appendChild(script);
+  });
+  const baseSaveCustomer=App.saveCustomer;
+  App.openCustomer=function(){
+    const customer=Store.read('draft',{}).customer||{};
+    savedManager=customer.manager||savedManager||'';
+    const today=jstDate();
+    document.querySelector('#modal').innerHTML='<h2>顧客を選ぶ</h2><div class="calendar-controls"><button class="btn sm" onclick="App.calendarShift(-1)">前日</button><input id="calendarDate" type="date" value="'+today+'" onchange="App.calendarLoad(this.value)"><button class="btn sm" onclick="App.calendarShift(1)">翌日</button><button class="btn sm" onclick="App.calendarLoad()">今日</button></div><div id="calendarEvents" class="calendar-events"><div class="notice">予定を読み込んでいます…</div></div><div class="calendar-manual"><div class="notice">予定に無い項目だけ手入力できます。</div><div class="field"><label>顧客名</label><input id="cName" value="'+esc(customer.name||'')+'"></div><div class="field"><label>電話番号</label><input id="cPhone" type="tel" value="'+esc(customer.phone||'')+'"></div><div class="field"><label>工事場所</label><input id="cAddress" value="'+esc(customer.address||'')+'"></div><div class="customer"><div class="field"><label>会社名</label><select id="cCompany">'+companyOptions(customer.company||'')+'</select></div><div class="field"><label>担当1</label><select id="cManager">'+managerOptions(customer.manager||'')+'</select></div></div></div><div class="modal-actions"><button class="btn" onclick="App.close()">閉じる</button><button class="btn primary" onclick="App.saveCustomer()">手入力を反映</button></div>';
+    document.querySelector('#modalBg').classList.add('open');
+    App.calendarLoad(today);
+  };
+  App.calendarShift=function(delta){const input=document.querySelector('#calendarDate');if(!input)return;const date=new Date(input.value+'T00:00:00');date.setDate(date.getDate()+delta);input.value=date.toISOString().slice(0,10);App.calendarLoad(input.value)};
+  App.calendarLoad=async function(date){const input=document.querySelector('#calendarDate');const target=document.querySelector('#calendarEvents');if(!input||!target)return;const selected=date||jstDate();input.value=selected;target.innerHTML='<div class="notice">予定を読み込んでいます…</div>';try{const data=await listCalendar(selected);if(!Array.isArray(data?.events))throw new Error('Calendar処理がまだ公開されていません。Apps Scriptを再デプロイしてください');events=data.events;target.innerHTML=events.length?events.map((ev,i)=>'<button class="calendar-event" onclick="App.applyCalendarEvent('+i+')"><strong>'+esc(ev.title||'（無題の予定）')+'</strong><small>'+esc((ev.start||'')+(ev.end?'〜'+ev.end:''))+(ev.location?'　'+esc(ev.location):'')+'</small></button>').join(''):'<div class="notice">この日の予定はありません。</div>'}catch(error){target.innerHTML='<div class="calendar-error">'+esc(error.message||'予定を読み込めません')+'</div>'}};
+  App.applyCalendarEvent=function(index){const event=events[index];if(!event)return;const c=event.customer||{};const set=(id,value)=>{const el=document.querySelector(id);if(el)el.value=value||''};set('#cName',c.name);set('#cPhone',c.phone);set('#cAddress',c.address);set('#cCompany',c.company);set('#cManager',c.manager);savedManager=c.manager||'';baseSaveCustomer();keepManager()};
+  App.saveCustomer=function(){savedManager=document.querySelector('#cManager')?.value||savedManager||'';baseSaveCustomer();keepManager()};
+  document.addEventListener('input',event=>{if(event.target?.dataset?.field)queueMicrotask(keepManager)},true);
+})();
+</script>
+<style>
+.calendar-controls{display:flex;gap:7px;align-items:center;margin-bottom:9px}.calendar-controls input{min-width:0;flex:1;border:1px solid var(--line);border-radius:7px;padding:7px}.calendar-events{display:grid;gap:6px;max-height:250px;overflow:auto;border-bottom:1px solid var(--line);padding-bottom:9px}.calendar-event{text-align:left;border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px 10px}.calendar-event:active{background:#eaf3ff;border-color:var(--blue)}.calendar-event strong,.calendar-event small{display:block}.calendar-event small{margin-top:3px;color:var(--muted)}.calendar-manual{margin-top:10px}.calendar-error{padding:9px;border:1px solid #fecaca;border-radius:8px;background:#fff7f7;color:#9b1c1c;font-size:12px}@media(max-width:760px){.calendar-controls{gap:5px}.calendar-controls .btn{padding:8px 7px}.calendar-event{min-height:57px;padding:10px}.calendar-event strong{font-size:15px}.calendar-event small{font-size:12px}.calendar-events{max-height:230px}}
+</style>
+<script>
+/* Keep calendar day navigation in Japan time, and keep numeric fields focused while typing. */
+(function(){
+  const baseSetItem=App.setItem;
+  const nextJstDate=(iso,delta)=>{
+    const parts=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!parts)return '';
+    const date=new Date(Date.UTC(+parts[1],+parts[2]-1,+parts[3]+delta));
+    return date.toISOString().slice(0,10);
+  };
+  App.calendarShift=function(delta){
+    const input=document.querySelector('#calendarDate');
+    if(!input)return;
+    input.value=nextJstDate(input.value,Number(delta)||0);
+    App.calendarLoad(input.value);
+  };
+  const itemEditInfo=element=>{
+    const source=element?.getAttribute('oninput')||'';
+    const hit=source.match(/App\.setItem\((\d+),'(qty|price)'/);
+    return hit?{index:+hit[1],key:hit[2]}:null;
+  };
+  document.addEventListener('input',event=>{
+    const info=itemEditInfo(event.target);
+    if(!info)return;
+    event.stopImmediatePropagation();
+    const draft=Store.read('draft',null),item=draft?.items?.[info.index];
+    if(!item)return;
+    item[info.key]=Number(event.target.value)||0;
+    if(info.key==='qty')item.linked=false;
+    draft.updatedAt=new Date().toISOString();
+    Store.write('draft',draft);
+  },true);
+  document.addEventListener('blur',event=>{
+    const info=itemEditInfo(event.target);
+    if(info)baseSetItem(info.index,info.key,event.target.value);
+  },true);
+})();
+</script>
+<script>
+/* A Sheets pull must not erase locally created sets while its previous save is arriving. */
+(function(){
+  const pullFromSheets=Sync.pull;
+  Sync.pull=async function(){
+    const localTemplates=Catalog.templates().map(template=>JSON.parse(JSON.stringify(template)));
+    const data=await pullFromSheets();
+    const remoteTemplates=Catalog.templates();
+    const localById=new Map(localTemplates.map(template=>[template.id,template]));
+    const remoteIds=new Set(remoteTemplates.map(template=>template.id));
+    let restored=false;
+    const merged=remoteTemplates.map(template=>{
+      const local=localById.get(template.id);
+      const startTile=!!(local?.startTile||String(local?.trade||'').startsWith('start:')||String(template.trade||'').startsWith('start:'));
+      if(startTile!==!!template.startTile)restored=true;
+      return {...template,startTile};
+    });
+    localTemplates.filter(template=>!remoteIds.has(template.id)).forEach(template=>{merged.push(template);restored=true});
+    if(restored){Catalog.saveTemplates(merged);Sync.push().catch(()=>{});}
+    return data;
+  };
+})();
+</script>
+<style>
+/* 工事名は明細の前で直接変更でき、スマホでも横に潰れない。 */
+.construction-field{display:flex;align-items:center;gap:7px;min-width:0}.construction-field label{font-size:0;font-weight:800;white-space:nowrap}.construction-field label:after{content:'工事名';font-size:16px}.construction-field input{min-width:180px;width:min(380px,44vw);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-weight:800;color:var(--navy);background:#fff}@media(max-width:760px){.construction-field{flex:1}.construction-field input{width:100%;min-width:0;font-size:14px;padding:7px}.construction-field label:after{font-size:14px}}
+</style>
+<script>
+/* 見積固有の工事名・期間を、既存の自動保存に載せる。 */
+(function(){
+  const fields=['constructionName','period'];
+  const tradeName={sash:'サッシ工事',bath:'ユニットバス工事',concrete:'コンクリ打設工事',paint:'塗装工事',water:'水回り工事'};
+  const templateName=d=>Catalog.templates().find(t=>t.trade===d?.trade)?.name||tradeName[d?.trade]||'';
+  const storeWrite=Store.write;
+  Store.write=function(key,value){
+    if(key===Store.keys.draft&&value&&typeof value==='object'&&value.trade){
+      const previous=Store.read(Store.keys.draft,null)?.customer||{};
+      const previousDraft=Store.read(Store.keys.draft,null)||{};
+      value.customer=value.customer||{};
+      fields.forEach(field=>{if((value.customer[field]===undefined||value.customer[field]==='')&&previous[field])value.customer[field]=previous[field]});
+      if(value.guarantee===undefined&&previousDraft.guarantee!==undefined)value.guarantee=previousDraft.guarantee;
+    }
+    return storeWrite(key,value);
+  };
+  function setField(field,value){
+    const input=document.querySelector('[data-field="'+field+'"]');
+    if(!input)return;
+    input.value=value||'';
+    input.dispatchEvent(new Event('input',{bubbles:true}));
+  }
+  function prepareDraft(d){
+    if(!d||!d.trade)return;
+    d.customer=d.customer||{};
+    if(d.guarantee===undefined)d.guarantee=true;
+    if(!d.customer.constructionName)d.customer.constructionName=templateName(d);
+  }
+  function ensureGuaranteeChoice(){
+    if(document.querySelector('.guarantee-choice'))return;
+    const note=document.querySelector('#note');
+    if(!note)return;
+    note.closest('.field').insertAdjacentHTML('afterend','<div class="guarantee-choice"><span>10年間メンテナンス保証工事</span><label><input type="radio" name="guarantee" value="yes" checked> 入れる</label><label><input type="radio" name="guarantee" value="no"> 入れない</label></div>');
+    document.querySelectorAll('input[name="guarantee"]').forEach(input=>input.addEventListener('change',()=>{
+      const draft=Store.read(Store.keys.draft,null);
+      if(draft){draft.guarantee=input.value!=='no';Store.write(Store.keys.draft,draft)};
+    }));
+  }
+  const boot=App.start;
+  App.start=function(){
+    ensureGuaranteeChoice();
+    const draft=Store.read(Store.keys.draft,null);
+    prepareDraft(draft);
+    if(draft)Store.write(Store.keys.draft,draft);
+    const result=boot();
+    const guarantee=document.querySelector('input[name="guarantee"][value="'+((draft&&draft.guarantee===false)?'no':'yes')+'"]');
+    if(guarantee)guarantee.checked=true;
+    return result;
+  };
+  const chooseTrade=App.chooseTrade;
+  App.chooseTrade=function(trade){
+    chooseTrade(trade);
+    const draft=Store.read(Store.keys.draft,null);
+    if(!draft)return;
+    draft.customer=draft.customer||{};
+    draft.guarantee=document.querySelector('input[name="guarantee"]:checked')?.value!=='no';
+    draft.customer.constructionName=templateName(draft);
+    Store.write(Store.keys.draft,draft);
+    setField('constructionName',draft.customer.constructionName);
+  };
+  const loadCase=App.loadCase;
+  App.loadCase=function(index){
+    const cases=Store.read(Store.keys.cases,[]);
+    if(cases[index]){prepareDraft(cases[index]);Store.write(Store.keys.cases,cases)}
+    loadCase(index);
+  };
+  const newEstimate=App.newEstimate;
+  App.newEstimate=function(){
+    newEstimate();
+    const yes=document.querySelector('input[name="guarantee"][value="yes"]');
+    if(yes)yes.checked=true;
+  };
+  const saveCase=App.saveCase;
+  App.saveCase=function(){
+    const draft=Store.read(Store.keys.draft,null);
+    saveCase();
+    if(!draft)return;
+    const cases=Store.read(Store.keys.cases,[]),saved=cases.find(x=>x.id===draft.id);
+    if(saved){saved.guarantee=draft.guarantee!==false;Store.write(Store.keys.cases,cases)};
+  };
+  const saveCustomer=App.saveCustomer;
+  App.saveCustomer=function(){
+    const before=Store.read(Store.keys.draft,null)?.customer||{};
+    saveCustomer();
+    requestAnimationFrame(()=>fields.forEach(field=>setField(field,Store.read(Store.keys.draft,null)?.customer?.[field]||before[field]||'')));
+  };
+  const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  const companyInfo={
+    '中央技建':{name:'(株)中央技建',address:'〒134-0091東京都江戸川区船堀1－6－20',tel:'TEL03‐6808‐9681'},
+    '日建':{name:'日建(株)',address:'〒134-0015 東京都江戸川区西瑞江4－12－3',tel:'TEL03－3656-9311'},
+    'エコロジー':{name:'エコロジー環境設備(株)',address:'〒194-0001東京都町田市つくし野1-22-1',tel:'TEL042-850-7126'}
+  };
+  const legacyPrint=App.print;
+  App.print=function(){
+    const realOpen=window.open;
+    window.open=function(){
+      const win=realOpen.apply(window,arguments);
+      if(!win||!win.document)return win;
+      const write=win.document.write.bind(win.document);
+      win.document.write=function(html){
+        const estimate=Store.read(Store.keys.draft,{customer:{}}),customer=estimate.customer||{};
+        const construction=customer.constructionName||templateName(estimate)||estimate.caseName||'各種工事';
+        const company=companyInfo[customer.company]||{name:customer.company||'',address:'',tel:''};
+        const coBlock='<div class="co-name">'+esc(company.name)+'</div>'+(company.address?'<div class="co-address">'+esc(company.address)+'</div><div class="co-address">'+esc(company.tel)+'</div>':'');
+        html=String(html)
+          .replace('.exp-r td{background:#e8f3ff!important}', '.exp-r td{background:#fff!important}')
+          .replace('</style>', '@media print{*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}}</style>')
+          .replace(/　御中/g,'　様')
+          .replace(/<div class="co-name">[\s\S]*?<\/div>/,coBlock)
+          .replace('.co-name{font-size:15.75pt;font-weight:700}', '.co-name{font-size:15.75pt;font-weight:700}.co-address{font-size:9.75pt;font-weight:400;line-height:1.45;white-space:nowrap}')
+          .replace(/(<td colspan="3" class="koji-name-big">)[\s\S]*?(<\/td>)/,'$1'+esc(construction)+'$2')
+          .replace(/(<td class="lbl" style="width:14%">工事期間<\/td><td>)[\s\S]*?(<\/td>)/,'$1'+esc(customer.period||'')+'$2')
+          .replace(/(<td class="lbl">工事概要<\/td><td colspan="3">)[\s\S]*?(<\/td>)/,'$1'+esc(construction)+'$2')
+          .replace(/(<div style="font-size:12\.75pt">)[\s\S]*?(<\/div><\/div><table class="m-tbl">)/,'$1'+esc(customer.name||'')+'　様　／　'+esc(construction)+'$2');
+        if(estimate.guarantee===false)html=html.replace(/<div class="hosho-box">[\s\S]*?<\/div>/,'');
+        return write(html);
+      };
+      return win;
+    };
+    try{return legacyPrint()}finally{window.open=realOpen}
+  };
+})();
+</script>
+<style>
+.modal.warehouse-modal{width:100vw;max-width:none;height:100dvh;max-height:none;border-radius:0;padding:14px;overflow:hidden;display:flex;flex-direction:column}.warehouse-full-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}.warehouse-full-head h2{margin:0 auto 0 0}.warehouse-full-body{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;min-height:0;flex:1}.warehouse-pane{display:flex;flex-direction:column;min-height:0;border:1px solid var(--line);border-radius:12px;background:#f8fbff;padding:10px}.warehouse-pane-head{display:flex;align-items:center;gap:7px;margin-bottom:8px;font-weight:900}.warehouse-pane-head select{min-width:0;flex:1;padding:7px;border:1px solid var(--line);border-radius:7px;background:#fff}.warehouse-scroll{min-height:0;overflow:auto;display:grid;gap:7px;padding-right:2px}.warehouse-set{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:stretch;border:2px dashed transparent;border-radius:9px}.warehouse-set.drag-over{border-color:var(--blue);background:#eaf3ff}.warehouse-set-add,.warehouse-master-add{min-width:0;text-align:left;border:1px solid var(--line);background:#fff;border-radius:8px;padding:8px 10px}.warehouse-set-add strong,.warehouse-master-add strong{display:block}.warehouse-set-add small,.warehouse-master-add small{display:block;color:var(--muted);font-size:11px;margin-top:2px}.warehouse-actions{display:flex;gap:5px;align-items:center}.warehouse-delete{width:40px;min-width:40px;border:1px solid #fecaca;border-radius:8px;background:#fff7f7;color:var(--danger);font-size:22px}.warehouse-master{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:stretch}.warehouse-master-add{cursor:grab}.warehouse-master-add:active{cursor:grabbing}.warehouse-target-note{font-size:11px;color:var(--muted);margin-left:auto}@media(max-width:760px){.modal.warehouse-modal{padding:10px}.warehouse-full-body{gap:8px;grid-template-columns:1fr 1fr}.warehouse-pane{padding:7px}.warehouse-pane-head{font-size:14px;flex-wrap:wrap}.warehouse-pane-head .btn{padding:6px 7px;font-size:11px}.warehouse-target-note{width:100%;margin:0}.warehouse-set{grid-template-columns:minmax(0,1fr) auto}.warehouse-set-add{font-size:13px;padding:8px}.warehouse-set-add small{font-size:10px}.warehouse-actions{grid-column:2;grid-row:1;flex-direction:column}.warehouse-actions .btn{padding:5px;font-size:11px}.warehouse-delete{width:33px;min-width:33px;height:31px;font-size:18px}.warehouse-master{grid-template-columns:minmax(0,1fr) auto}.warehouse-master-add{font-size:13px;padding:8px}.warehouse-master .warehouse-delete{grid-column:2}.warehouse-master .btn.sm{padding:5px;font-size:11px}}
+</style>
+<script>
+/* Full-screen warehouse: masters stay reusable and can be dropped into any set. */
+(function(){
+  const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let selectedTemplateId='';
+  const baseClose=App.close,baseEditTemplate=App.editTemplate,baseOpenMaster=App.openMaster;
+  const sync=()=>Sync.push().catch(()=>{});
+  function setTarget(){const ts=Catalog.templates();if(!ts.some(t=>t.id===selectedTemplateId))selectedTemplateId=ts[0]?.id||''}
+  function refresh(){
+    const scrolls=[...document.querySelectorAll('.warehouse-scroll')].map(node=>node.scrollTop);
+    App.openWarehouse();
+    document.querySelectorAll('.warehouse-scroll').forEach((node,index)=>{node.scrollTop=scrolls[index]||0});
+  }
+  App.close=function(){document.querySelector('#modal')?.classList.remove('warehouse-modal');baseClose()};
+  App.openWarehouse=function(){
+    const ts=Catalog.templates(),ms=Catalog.masters();setTarget();
+    const modal=document.querySelector('#modal');modal.className='modal warehouse-modal';
+    const options=ts.map(t=>'<option value="'+esc(t.id)+'"'+(t.id===selectedTemplateId?' selected':'')+'>'+esc(t.name)+'</option>').join('');
+    const sets=ts.map(t=>'<div class="warehouse-set" ondragover="App.warehouseAllowDrop(event)" ondragleave="this.classList.remove(\'drag-over\')" ondrop="App.warehouseDrop(event,\''+esc(t.id)+'\')"><button class="warehouse-set-add" onclick="App.addTemplate(\''+esc(t.id)+'\')"><strong>'+esc(t.name)+'</strong><small>'+(t.items||[]).length+'項目 · タップで見積へ追加</small></button><div class="warehouse-actions"><button class="btn sm" onclick="App.warehouseEditSet(\''+esc(t.id)+'\')">編集</button><button class="warehouse-delete" title="セットを削除" onclick="App.warehouseDeleteSet(\''+esc(t.id)+'\')">×</button></div></div>').join('')||'<div class="empty">セットがありません</div>';
+    const masters=ms.map(m=>'<div class="warehouse-master"><button class="warehouse-master-add" draggable="true" ondragstart="App.warehouseDragStart(event,\''+esc(m.id)+'\')" onclick="App.addMasterToEstimate(\''+esc(m.id)+'\')"><strong>'+esc(m.name)+'</strong><small>'+esc(m.unit||'式')+' · ¥'+Number(m.price||0).toLocaleString()+' · タップで見積へ追加</small></button><button class="btn sm" title="選択中セットへ追加" onclick="App.warehouseAddToSelected(\''+esc(m.id)+'\')">セット＋</button><button class="warehouse-delete" title="単品を削除" onclick="App.warehouseDeleteMaster(\''+esc(m.id)+'\')">×</button></div>').join('')||'<div class="empty">単品がありません</div>';
+    modal.innerHTML='<div class="warehouse-full-head"><h2>倉庫</h2><button class="btn sm" onclick="App.newTemplate()">＋ セット</button><button class="btn sm" onclick="App.openMaster()">＋ 単品</button><button class="btn" onclick="App.close()">閉じる</button></div><div class="warehouse-full-body"><section class="warehouse-pane"><div class="warehouse-pane-head"><span>単品</span><select onchange="App.warehouseSelect(this.value)">'+options+'</select><span class="warehouse-target-note">ドラッグ先</span></div><div class="warehouse-scroll">'+masters+'</div></section><section class="warehouse-pane"><div class="warehouse-pane-head"><span>セット</span><span class="warehouse-target-note">単品をドラッグして追加</span></div><div class="warehouse-scroll">'+sets+'</div></section></div>';
+    document.querySelector('#modalBg').classList.add('open');
+  };
+  App.warehouseSelect=id=>{selectedTemplateId=id};
+  App.warehouseDragStart=(event,id)=>{event.dataTransfer.effectAllowed='copy';event.dataTransfer.setData('text/plain',id)};
+  App.warehouseAllowDrop=event=>{event.preventDefault();event.currentTarget.classList.add('drag-over')};
+  App.warehouseDrop=(event,templateId)=>{event.preventDefault();event.currentTarget.classList.remove('drag-over');App.warehouseAddToSet(event.dataTransfer.getData('text/plain'),templateId)};
+  App.warehouseAddToSelected=id=>App.warehouseAddToSet(id,selectedTemplateId);
+  App.warehouseAddToSet=function(masterId,templateId){
+    const ts=Catalog.templates(),template=ts.find(t=>t.id===templateId),master=Catalog.masters().find(m=>m.id===masterId);
+    if(!template||!master)return;
+    template.items=template.items||[];
+    if(template.items.includes(masterId))return;
+    template.items.push(masterId);Catalog.saveTemplates(ts);sync();refresh();
+  };
+  App.warehouseEditSet=id=>{document.querySelector('#modal')?.classList.remove('warehouse-modal');baseEditTemplate(id)};
+  App.openMaster=function(){document.querySelector('#modal')?.classList.remove('warehouse-modal');baseOpenMaster()};
+  App.warehouseDeleteSet=function(id){
+    const t=Catalog.templates().find(x=>x.id===id);if(!t)return;
+    Catalog.saveTemplates(Catalog.templates().filter(x=>x.id!==id));sync();refresh();
+  };
+  App.warehouseDeleteMaster=function(id){
+    const m=Catalog.masters().find(x=>x.id===id);if(!m)return;
+    Catalog.saveMasters(Catalog.masters().filter(x=>x.id!==id));
+    Catalog.saveTemplates(Catalog.templates().map(t=>({...t,items:(t.items||[]).filter(mid=>mid!==id)})));sync();refresh();
+  };
+})();
+</script>
+<style>
+/* 明細の並び替え用。入力欄と誤タップしないよう、つまみだけをドラッグ可能にする。 */
+.item-drag-handle{cursor:grab;border:0;background:transparent;color:var(--muted);font-size:17px;line-height:1;padding:3px 2px;touch-action:none}.item-drag-handle:active{cursor:grabbing}.drag-item-over{outline:2px solid var(--blue)!important;outline-offset:-2px;background:#eaf3ff!important}.drag-table-head{width:26px}@media(max-width:760px){.item-line{grid-template-columns:24px minmax(0,1fr) 47px 32px 67px 78px 28px}.item-drag-handle{font-size:16px;padding:3px 0}}
+</style>
+<script>
+/* 明細のドラッグ並び替え。現在の作業中見積を先に保存してから再描画する。 */
+(function(){
+  let draggingIndex=null;
+  const draftKey=Store.keys.draft;
+  const move=(from,to)=>{
+    const draft=Store.read(draftKey,null);
+    if(!draft?.items||from===null||from===to||from<0||to<0||from>=draft.items.length||to>=draft.items.length)return;
+    const [item]=draft.items.splice(from,1);
+    draft.items.splice(to,0,item);
+    draft.updatedAt=new Date().toISOString();
+    Store.write(draftKey,draft);
+    /* App内部の作業データも確実に読み直す。保存済み案件やマスターは変更しない。 */
+    App.start();
+  };
+  const begin=(event,index)=>{
+    draggingIndex=index;
+    event.dataTransfer.effectAllowed='move';
+    event.dataTransfer.setData('text/plain',String(index));
+  };
+  const target=(event,index)=>{
+    event.preventDefault();
+    const from=Number(event.dataTransfer.getData('text/plain'));
+    if(Number.isInteger(from)&&from!==index)move(from,index);
+    draggingIndex=null;
+  };
+  function attach(node,index){
+    if(node.dataset.dragReady)return;
+    node.dataset.dragReady='1';
+    node.addEventListener('dragover',event=>{event.preventDefault();node.classList.add('drag-item-over')});
+    node.addEventListener('dragleave',()=>node.classList.remove('drag-item-over'));
+    node.addEventListener('drop',event=>{node.classList.remove('drag-item-over');target(event,index)});
+  }
+  function handle(index){
+    const button=document.createElement('button');
+    button.type='button';button.className='item-drag-handle';button.draggable=true;button.title='ドラッグして並べ替え';button.setAttribute('aria-label','明細を並べ替え');button.textContent='⋮⋮';
+    button.addEventListener('click',event=>event.stopPropagation());
+    button.addEventListener('dragstart',event=>begin(event,index));
+    return button;
+  }
+  function enhance(){
+    const head=document.querySelector('#rows')?.closest('table')?.querySelector('thead tr');
+    if(head&&!head.querySelector('.drag-table-head')){const th=document.createElement('th');th.className='drag-table-head';th.textContent='';head.prepend(th)}
+    document.querySelectorAll('#rows tr').forEach((row,index)=>{
+      attach(row,index);
+      if(!row.querySelector('.item-drag-handle')){const cell=document.createElement('td');cell.prepend(handle(index));row.prepend(cell)}
+    });
+    document.querySelectorAll('#cards .item-card').forEach((card,index)=>{
+      attach(card,index);
+      const line=card.querySelector('.item-line');
+      if(line&&!line.querySelector('.item-drag-handle'))line.prepend(handle(index));
+    });
+  }
+  new MutationObserver(enhance).observe(document.querySelector('#rows'),{childList:true});
+  new MutationObserver(enhance).observe(document.querySelector('#cards'),{childList:true});
+  setTimeout(enhance,0);
+})();
+</script>
+<script>
+/* 倉庫編集も入力した瞬間にローカル保存し、同期は短くまとめて送る。 */
+(function(){
+  let syncTimer;
+  const queueSync=()=>{clearTimeout(syncTimer);syncTimer=setTimeout(()=>Sync.push().catch(()=>{}),500)};
+  const later=fn=>setTimeout(fn,0);
+  const oldEditTemplate=App.editTemplate;
+  App.editTemplate=function(id){
+    oldEditTemplate(id);
+    const modal=document.querySelector('#modal');
+    const saveButton=modal?.querySelector('[onclick*="commitCleanTemplate"]');
+    const found=saveButton?.getAttribute('onclick')?.match(/commitCleanTemplate\('([^']+)'\)/);
+    const templateId=found?.[1]||id;
+    if(!modal||!templateId)return;
+    const persist=()=>{
+      const name=modal.querySelector('#cleanTName')?.value.trim()||'名称未設定';
+      const trade=modal.querySelector('#cleanTTrade')?.value||'other';
+      const masters=Catalog.masters();
+      const positions=new Map(masters.map((master,index)=>[master.id,index]));
+      const rows=[...modal.querySelectorAll('[data-clean-row]')].map(row=>{
+        const itemName=row.querySelector('.name')?.value.trim()||'';
+        if(!itemName)return null;
+        let itemId=row.dataset.masterId;
+        if(!itemId||!positions.has(itemId)){itemId=Catalog.id('m');row.dataset.masterId=itemId;positions.set(itemId,masters.length);masters.push({id:itemId})}
+        const item={id:itemId,trade,name:itemName,desc:row.querySelector('.desc')?.value.trim()||'',qty:+row.querySelector('.qty')?.value||0,unit:row.querySelector('.unit')?.value||'式',price:+row.querySelector('.price')?.value||0,group:row.querySelector('.group')?.value||''};
+        masters[positions.get(itemId)]=item;return item;
+      }).filter(Boolean);
+      Catalog.saveMasters(masters);
+      const templates=Catalog.templates(),index=templates.findIndex(template=>template.id===templateId),previous=index>=0?templates[index]:{};
+      const template={...previous,id:templateId,name,trade,items:rows.map(item=>item.id),startTile:!!modal.querySelector('#cleanStartSet')?.checked};
+      if(index>=0)templates[index]=template;else templates.push(template);
+      Catalog.saveTemplates(templates);queueSync();
+    };
+    modal.addEventListener('input',persist);
+    modal.addEventListener('change',persist);
+    modal.addEventListener('click',event=>{if(event.target.closest('.icon,.btn'))later(persist)});
+  };
+  /* 全画面倉庫の「編集」も、上の即保存版を通す。 */
+  App.warehouseEditSet=function(id){document.querySelector('#modal')?.classList.remove('warehouse-modal');App.editTemplate(id)};
+  const oldOpenMaster=App.openMaster;
+  App.openMaster=function(){
+    oldOpenMaster();
+    const modal=document.querySelector('#modal');if(!modal)return;
+    let masterId='';
+    const persist=()=>{
+      const name=modal.querySelector('#mName')?.value.trim();
+      if(!name)return;
+      const masters=Catalog.masters();
+      if(!masterId){masterId=Catalog.id('m');modal.dataset.autoMasterId=masterId;masters.push({id:masterId})}
+      const index=masters.findIndex(master=>master.id===masterId);
+      masters[index]={id:masterId,trade:'other',name,desc:modal.querySelector('#mDesc')?.value||'',qty:+modal.querySelector('#mQty')?.value||0,unit:modal.querySelector('#mUnit')?.value||'式',price:+modal.querySelector('#mPrice')?.value||0,group:modal.querySelector('#mGroup')?.value||''};
+      Catalog.saveMasters(masters);queueSync();
+    };
+    modal.addEventListener('input',persist);modal.addEventListener('change',persist);
+  };
+  const oldCommitMaster=App.commitMaster;
+  App.commitMaster=function(){
+    const modal=document.querySelector('#modal');
+    if(modal?.dataset.autoMasterId){App.openWarehouse();return}
+    oldCommitMaster();
+  };
+})();
+</script>
+<script>
+/* 単位は「組」に統一。過去の保存データ・Sheetsから戻る旧「式」も開いた時点で直す。 */
+(function(){
+  const normalizeItems=items=>{let changed=false;(items||[]).forEach(item=>{if(item.unit==='式'){item.unit='組';changed=true}});return changed};
+  const normalizeAll=()=>{
+    let changed=false;
+    const masters=Catalog.masters();if(normalizeItems(masters)){Catalog.saveMasters(masters);changed=true}
+    const draft=Store.read(Store.keys.draft,null);if(draft&&normalizeItems(draft.items)){Store.write(Store.keys.draft,draft);changed=true}
+    const cases=Store.read(Store.keys.cases,[]);if(cases.some(record=>normalizeItems(record.items))){Store.write(Store.keys.cases,cases);changed=true}
+    return changed;
+  };
+  const start=App.start;
+  App.start=function(){normalizeAll();return start()};
+  const pull=Sync.pull;
+  Sync.pull=async function(){const result=await pull();if(normalizeAll())Sync.push().catch(()=>{});return result};
+  const removeOldUnit=()=>document.querySelectorAll('select').forEach(select=>{
+    if(select.value==='式')select.value='組';
+    select.querySelectorAll('option').forEach(option=>{if(option.value==='式'||option.textContent==='式')option.remove()});
+  });
+  new MutationObserver(removeOldUnit).observe(document.body,{childList:true,subtree:true});
+  const oldPrint=App.print;
+  App.print=function(){
+    const originalOpen=window.open;
+    window.open=function(){const win=originalOpen.apply(window,arguments);if(!win?.document)return win;const write=win.document.write.bind(win.document);win.document.write=html=>write(String(html).replace(/>式</g,'>組<'));return win};
+    try{return oldPrint()}finally{window.open=originalOpen}
+  };
+  removeOldUnit();
+})();
+</script>
+<style>
+/* 倉庫の単品は展開したその場で直せる。 */
+.warehouse-master{grid-template-columns:minmax(0,1fr) auto auto auto}.warehouse-master-editor{grid-column:1/-1;display:grid;grid-template-columns:1.2fr 1fr 58px 58px 78px 90px;gap:6px;padding:8px;border:1px solid var(--line);border-radius:8px;background:#fff}.warehouse-master-editor input,.warehouse-master-editor select{min-width:0;width:100%;border:1px solid var(--line);border-radius:6px;padding:6px}@media(max-width:760px){.warehouse-master{grid-template-columns:minmax(0,1fr) auto auto auto}.warehouse-master-editor{grid-template-columns:1fr 54px 58px}.warehouse-master-editor .master-desc,.warehouse-master-editor .master-group{display:none}.warehouse-master-editor input,.warehouse-master-editor select{font-size:13px;padding:7px}}
+</style>
+<script>
+/* 明細は入力中に再描画しない。値だけ即保存し、フォーカスを失った時だけ表示を整える。 */
+(function(){
+  const originalSetItem=App.setItem;
+  const sourceInfo=element=>{
+    const source=element?.getAttribute('oninput')||'';
+    const hit=source.match(/App\.setItem\((\d+),'(name|desc|qty|price|unit|group|linked)'/);
+    return hit?{index:+hit[1],key:hit[2]}:null;
+  };
+  const updateTotals=draft=>{
+    const work=(draft.items||[]).reduce((sum,item)=>sum+(+item.qty||0)*(+item.price||0),0),expense=+draft.expense||0,sub=work+expense,tax=Math.round(sub*.1),grand=sub+tax;
+    const yen=value=>'¥'+Math.round(value).toLocaleString('ja-JP');
+    const values={workSum:work,subSum:sub,taxSum:tax,grandSum:grand};
+    Object.entries(values).forEach(([id,value])=>{const node=document.querySelector('#'+id);if(node)node.textContent=yen(value)});
+  };
+  document.addEventListener('input',event=>{
+    const info=sourceInfo(event.target);
+    if(!info)return;
+    event.stopImmediatePropagation();
+    const draft=Store.read(Store.keys.draft,null),item=draft?.items?.[info.index];
+    if(!item)return;
+    const value=event.target.value;
+    item[info.key]=['qty','price'].includes(info.key)?(+value||0):value;
+    if(info.key==='qty')item.linked=false;
+    draft.updatedAt=new Date().toISOString();Store.write(Store.keys.draft,draft);updateTotals(draft);
+  },true);
+  document.addEventListener('focusout',event=>{
+    const info=sourceInfo(event.target);
+    /* 数量・単価は既存のblur処理が確定するため、ここでは文字・単位だけ確定する。 */
+    if(info&&!['qty','price'].includes(info.key))originalSetItem(info.index,info.key,event.target.value);
+  },true);
+})();
+</script>
+<script>
+/* 単品は倉庫内で展開編集、セット保存の終点は常に倉庫。 */
+(function(){
+  let syncTimer;
+  const sync=()=>{clearTimeout(syncTimer);syncTimer=setTimeout(()=>Sync.push().catch(()=>{}),450)};
+  const oldWarehouse=App.openWarehouse;
+  function decorateMasters(){
+    const masters=Catalog.masters();
+    document.querySelectorAll('#modal.warehouse-modal .warehouse-master').forEach((card,index)=>{
+      const master=masters[index];if(!master||card.dataset.masterReady)return;
+      card.dataset.masterReady='1';card.dataset.masterId=master.id;
+      const edit=document.createElement('button');edit.type='button';edit.className='btn sm';edit.textContent='編集';edit.onclick=()=>App.warehouseEditMaster(master.id);card.append(edit);
+    });
+  }
+  App.openWarehouse=function(){oldWarehouse();decorateMasters()};
+  App.warehouseEditMaster=function(id){
+    const card=document.querySelector('.warehouse-master[data-master-id="'+id+'"]');
+    const master=Catalog.masters().find(item=>item.id===id);if(!card||!master)return;
+    card.querySelector('.warehouse-master-editor')?.remove();
+    const esc=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    const editor=document.createElement('div');editor.className='warehouse-master-editor';
+    editor.innerHTML='<input class="master-name" value="'+esc(master.name)+'" placeholder="品名"><input class="master-desc" value="'+esc(master.desc)+'" placeholder="概要"><input class="master-qty" type="number" value="'+(+master.qty||0)+'"><select class="master-unit"><option '+(master.unit==='組'?'selected':'')+'>組</option><option '+(master.unit==='㎡'?'selected':'')+'>㎡</option><option '+(master.unit==='m'?'selected':'')+'>m</option><option '+(master.unit==='個'?'selected':'')+'>個</option><option '+(master.unit==='㎥'?'selected':'')+'>㎥</option></select><input class="master-price" type="number" value="'+(+master.price||0)+'"><select class="master-group"><option value="">連動なし</option><option value="sashCount">サッシ数</option><option value="concreteArea">コンクリ面積</option><option value="paintArea">塗装面積</option><option value="scaffoldArea">足場面積</option><option value="length">長さ</option></select>';
+    editor.querySelector('.master-group').value=master.group||'';
+    const save=()=>{
+      const masters=Catalog.masters(),index=masters.findIndex(item=>item.id===id);if(index<0)return;
+      masters[index]={...masters[index],name:editor.querySelector('.master-name').value.trim(),desc:editor.querySelector('.master-desc').value.trim(),qty:+editor.querySelector('.master-qty').value||0,unit:editor.querySelector('.master-unit').value,price:+editor.querySelector('.master-price').value||0,group:editor.querySelector('.master-group').value};
+      Catalog.saveMasters(masters);sync();
+    };
+    editor.addEventListener('input',save);editor.addEventListener('change',save);card.append(editor);
+  };
+  const oldCommitTemplate=App.commitCleanTemplate;
+  App.commitCleanTemplate=async function(id){const result=await oldCommitTemplate(id);App.openWarehouse();return result};
+})();
+</script>
+<style>
+/* 倉庫セット編集の安定化: 既存の編集画面を再利用せず、保存経路を一つにする。 */
+.stable-template-editor{display:grid;gap:10px}.stable-template-editor .edit-row{grid-template-columns:36px minmax(130px,1.3fr) minmax(110px,1fr) 72px 74px 96px 130px 36px 36px}.stable-template-editor .edit-row .btn,.stable-template-editor .edit-row .icon{min-width:36px;padding:5px}.stable-template-editor .editor-note{font-size:12px;color:var(--muted);margin:0}.stable-template-editor .start-set-toggle{margin:0}.stable-template-editor .save-state{font-size:12px;color:var(--muted);min-height:18px}@media(max-width:760px){.stable-template-editor .edit-row{display:flex;flex-wrap:wrap}.stable-template-editor .edit-row .name{flex:1 1 calc(100% - 92px)}.stable-template-editor .edit-row .desc,.stable-template-editor .edit-row .group{display:block;flex:1 1 100%}.stable-template-editor .edit-row .qty{width:72px}.stable-template-editor .edit-row .unit{width:76px}.stable-template-editor .edit-row .price{flex:1;min-width:120px}}
+</style>
+<script>
+/*
+  倉庫セット編集の一本化。
+  以前は「入力時の自動保存」「保存ボタン」「スタート画面用の追加処理」が
+  別々に同じセットを更新していたため、保存のたびにコピーが作られる余地があった。
+  以下では編集セッションごとに固定IDを一つだけ使い、同じIDを上書きする。
+*/
+(function(){
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const unitList=['組','㎡','m','個','㎥'];
+  const groupList=[['','連動なし'],['sashCount','サッシ数'],['concreteArea','コンクリ面積'],['paintArea','塗装面積'],['scaffoldArea','足場面積'],['length','長さ']];
+  let syncTimer;
+  const queueSync=()=>{clearTimeout(syncTimer);syncTimer=setTimeout(()=>Sync.push().catch(()=>{}),700)};
+  const row=(item={})=>'<div class="edit-row" data-stable-row data-master-id="'+esc(item.id||'')+'"><button class="btn sm" type="button" onclick="App.stableMoveRow(this,-1)">↑</button><input class="name" value="'+esc(item.name)+'" placeholder="品名"><input class="desc" value="'+esc(item.desc)+'" placeholder="概要"><input class="qty" type="number" inputmode="decimal" value="'+(+item.qty||0)+'"><select class="unit">'+unitList.map(unit=>'<option value="'+unit+'"'+(unit===(item.unit==='式'?'組':item.unit)?' selected':'')+'>'+unit+'</option>').join('')+'</select><input class="price" type="number" inputmode="numeric" value="'+(+item.price||0)+'"><select class="group">'+groupList.map(([key,label])=>'<option value="'+key+'"'+(key===(item.group||'')?' selected':'')+'>'+label+'</option>').join('')+'</select><button class="btn sm" type="button" onclick="App.stableMoveRow(this,1)">↓</button><button class="icon" type="button" onclick="App.stableRemoveRow(this)">×</button></div>';
+  function session(){return document.querySelector('#modal .stable-template-editor')}
+  function state(text){const node=session()?.querySelector('.save-state');if(node)node.textContent=text}
+  function collapseExactDuplicates(){
+    const seen=new Set(), unique=[];let changed=false;
+    Catalog.templates().forEach(template=>{
+      const key=[template.name||'',template.trade||'',(template.items||[]).join('|')].join('\u0001');
+      if(seen.has(key)){changed=true;return} seen.add(key);unique.push(template);
+    });
+    if(changed)Catalog.saveTemplates(unique);
+    return changed;
+  }
+  function saveEditor(push){
+    const editor=session();if(!editor)return false;
+    const id=editor.dataset.templateId;
+    const name=editor.querySelector('#stableTName').value.trim()||'名称未設定';
+    const trade=editor.querySelector('#stableTTrade').value||'other';
+    const masters=Catalog.masters();
+    const masterIndex=new Map(masters.map((master,index)=>[master.id,index]));
+    const items=[];
+    editor.querySelectorAll('[data-stable-row]').forEach(element=>{
+      const itemName=element.querySelector('.name').value.trim();
+      if(!itemName)return;
+      let masterId=element.dataset.masterId;
+      if(!masterId||!masterIndex.has(masterId)){
+        masterId=Catalog.id('m');element.dataset.masterId=masterId;masterIndex.set(masterId,masters.length);masters.push({id:masterId});
+      }
+      const master={id:masterId,trade,name:itemName,desc:element.querySelector('.desc').value.trim(),qty:+element.querySelector('.qty').value||0,unit:element.querySelector('.unit').value,price:+element.querySelector('.price').value||0,group:element.querySelector('.group').value};
+      masters[masterIndex.get(masterId)]=master;items.push(master);
+    });
+    if(!items.length){state('品名を入力すると保存されます');return false}
+    Catalog.saveMasters(masters);
+    const templates=Catalog.templates();
+    const at=templates.findIndex(template=>template.id===id);
+    const previous=at>=0?templates[at]:{};
+    const template={...previous,id,name,trade,items:items.map(item=>item.id),startTile:!!editor.querySelector('#stableStartSet').checked};
+    if(at>=0)templates[at]=template;else templates.push(template);
+    Catalog.saveTemplates(templates);
+    collapseExactDuplicates();
+    state(push?'同期しています…':'この端末に保存済み');
+    if(push){queueSync();state('保存済み')}
+    return true;
+  }
+  let persistTimer;
+  const schedule=()=>{clearTimeout(persistTimer);persistTimer=setTimeout(()=>saveEditor(true),350)};
+  App.editTemplate=function(id){
+    const current=id?Catalog.templates().find(template=>template.id===id):null;
+    const templateId=current?.id||Catalog.id('t');
+    const base=current||{id:templateId,name:'新しいセット',trade:'other',items:[],startTile:false};
+    const masters=Catalog.masters();
+    const rows=(base.items||[]).map(masterId=>masters.find(master=>master.id===masterId)).filter(Boolean);
+    const selectedTrade=String(base.trade||'').startsWith('start:')?'other':base.trade||'other';
+    const tradeOptions=[['sash','サッシ工事'],['bath','ユニットバス工事'],['concrete','コンクリ打設工事'],['paint','塗装工事'],['water','水回り工事'],['other','その他']].map(([value,label])=>'<option value="'+value+'"'+(value===selectedTrade?' selected':'')+'>'+label+'</option>').join('');
+    const modal=document.querySelector('#modal');modal.className='modal';
+    modal.innerHTML='<div class="stable-template-editor" data-template-id="'+esc(templateId)+'"><h2>セットを編集</h2><div class="field"><label>セット名</label><input id="stableTName" value="'+esc(base.name)+'"></div><div class="field"><label>工種</label><select id="stableTTrade">'+tradeOptions+'</select></div><label class="start-set-toggle"><input id="stableStartSet" type="checkbox"'+(base.startTile||String(base.trade||'').startsWith('start:')?' checked':'')+'> スタート画面の工事として表示</label><p class="editor-note">入力内容は自動保存されます。保存を押すと倉庫へ戻ります。</p><div id="stableRows" class="edit-rows">'+rows.map(row).join('')+'</div><div class="save-state">編集できます</div><div class="modal-actions"><button class="btn" type="button" onclick="App.stableAddRow()">＋ 項目を追加</button><button class="btn primary" type="button" onclick="App.stableCommitTemplate()">保存</button></div></div>';
+    document.querySelector('#modalBg').classList.add('open');
+    modal.addEventListener('input',schedule,{once:false});modal.addEventListener('change',schedule,{once:false});
+  };
+  App.stableAddRow=function(){const rows=document.querySelector('#stableRows');rows.insertAdjacentHTML('beforeend',row({qty:1,unit:'組',price:0}));state('入力してください')};
+  App.stableRemoveRow=function(button){button.closest('[data-stable-row]')?.remove();saveEditor(true)};
+  App.stableMoveRow=function(button,direction){const item=button.closest('[data-stable-row]'),other=direction<0?item.previousElementSibling:item.nextElementSibling;if(other)item.parentElement.insertBefore(direction<0?item:other,direction<0?other:item);saveEditor(true)};
+  App.stableCommitTemplate=function(){
+    const editor=session(),button=editor?.querySelector('.primary');if(!editor||editor.dataset.saving==='1')return;
+    editor.dataset.saving='1';if(button)button.disabled=true;
+    const saved=saveEditor(true);
+    if(saved){App.openWarehouse()}else{editor.dataset.saving='0';if(button)button.disabled=false}
+  };
+  App.commitCleanTemplate=function(){App.stableCommitTemplate()};
+  App.warehouseEditSet=function(id){App.editTemplate(id)};
+  App.newTemplate=function(){App.editTemplate(null)};
+  collapseExactDuplicates();
+})();
+</script>
+<script>
+/* Sheets通信を直列化する。編集途中の古い同期結果が新しい保存を上書きしない。 */
+(function(){
+  let traffic=Promise.resolve();
+  const push=Sync.push,pull=Sync.pull;
+  Sync.push=function(){traffic=traffic.catch(()=>{}).then(()=>push());return traffic};
+  Sync.pull=function(){traffic=traffic.catch(()=>{}).then(()=>pull());return traffic};
+})();
+</script>
+<style>.example-choice{border-top:1px solid var(--line);padding-top:8px}.example-choice label{display:block;font-size:11px;color:var(--muted);font-weight:800;margin-bottom:3px}.example-choice select{width:100%;border:1px solid var(--line);border-radius:7px;padding:8px;background:#fff}.example-qr{display:flex;align-items:center;gap:10px;margin-top:10px;padding:7px;border:1.5px solid #286a8f;background:#f1faff;font-size:10pt;line-height:1.45}.example-qr img{width:72px;height:72px;background:#fff}.example-qr b{display:block;font-size:12pt;color:#123b59}</style>
+<script>
+/* 工事別施工例。選択値だけを見積データへ保存し、印刷時はQRで施工例を開ける。 */
+(function(){
+  const examples=[{id:'unit-bath-example',trade:'bath',title:'ユニットバス施工例',url:'https://koutaikyu.github.io/mitsumori-tool/images/unit-bath-example.png',note:'施工前から完成までの工程をご覧いただけます。'}];
+  const draft=()=>Store.read(Store.keys.draft,{});
+  function ensureChoice(){
+    const summary=document.querySelector('.summary');if(!summary||summary.querySelector('#exampleSelect'))return;
+    const block=document.createElement('div');block.className='example-choice';
+    block.innerHTML='<label for="exampleSelect">施工例（印刷時にQRコードを載せる）</label><select id="exampleSelect"><option value="">載せない</option>'+examples.map(example=>'<option value="'+example.id+'">'+example.title+'</option>').join('')+'</select>';
+    const before=summary.querySelector('.sumrow');summary.insertBefore(block,before||null);
+    const select=block.querySelector('select');select.value=draft().exampleId||'';
+    select.addEventListener('change',()=>{const data=draft();data.exampleId=select.value;data.updatedAt=new Date().toISOString();Store.write(Store.keys.draft,data)});
+  }
+  const refreshChoice=()=>setTimeout(ensureChoice,0);
+  new MutationObserver(refreshChoice).observe(document.querySelector('#work'),{childList:true,subtree:true});refreshChoice();
+  ['newEstimate','loadCase'].forEach(name=>{const base=App[name];if(!base)return;App[name]=function(){const result=base.apply(this,arguments);const select=document.querySelector('#exampleSelect');if(select)select.value=draft().exampleId||'';return result}});
+  const basePrint=App.print;
+  App.print=function(){
+    const selected=examples.find(example=>example.id===draft().exampleId);if(!selected)return basePrint();
+    const realOpen=window.open,parts=[];
+    window.open=function(){return{document:{open(){},write(value){parts.push(value)},close(){}}}};
+    try{basePrint()}finally{window.open=realOpen}
+    let html=parts.join('');if(!html)return;
+    html=html.replace('</style></head>','.example-qr{display:flex;align-items:center;gap:10px;margin-top:10px;padding:7px;border:1.5px solid #286a8f;background:#f1faff;font-size:10pt;line-height:1.45}.example-qr img{width:72px;height:72px;background:#fff}.example-qr b{display:block;font-size:12pt;color:#123b59}</style></head>');
+    const qr='https://api.qrserver.com/v1/create-qr-code/?size=180x180&data='+encodeURIComponent(selected.url);
+    const box='<div style="text-align:right;margin-top:8px"><img src="'+qr+'" alt="施工例QRコード" style="width:52px;height:52px;background:#fff"></div>';
+    /* 合計欄の後の余白へ置く。表や合計金額には重ねない。 */
+    html=html.replace('※上記金額は消費税込みの御見積金額です。</div></section>','※上記金額は消費税込みの御見積金額です。</div>'+box+'</section>');
+    const win=realOpen('','_blank');if(!win){alert('印刷画面を開けませんでした。');return}win.document.open();win.document.write(html);win.document.close();
+  };
+})();
+</script>
+<script>App.start();</script>
+</body></html>
