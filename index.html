@@ -866,5 +866,160 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   };
 })();
 </script>
+<style>
+/* 日常の見積作成用導線。印刷用HTML/CSSには一切影響させない。 */
+.top .daily-actions{display:flex;align-items:center;gap:8px}.top .manage-btn{background:#eaf3ff;border-color:#9fc3f3;color:#0b4d9b}.flow-start{border:1px solid var(--line);border-radius:10px;background:#f8fbff;padding:12px;margin:0 0 14px}.flow-start h2{font-size:16px;margin:0 0 8px}.flow-start .flow-customer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #b9d5f6;border-radius:8px;background:#fff}.flow-start .flow-customer small{display:block;color:var(--muted);margin-top:2px}.flow-start .flow-next{color:var(--muted);font-size:12px;margin:9px 0 0}.workflow-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:0 0 10px}.workflow-step{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff;min-width:0}.workflow-step b,.workflow-step span{display:block}.workflow-step b{font-size:11px;color:var(--blue)}.workflow-step span{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.workflow-step button{margin-top:4px;padding:3px 5px;font-size:11px}.workflow-step.current{border-color:#8bb9ee;background:#f1f7ff}.step-title{display:flex;align-items:center;gap:7px}.step-title .step-no{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px}.summary:before{content:'4　金額を確認';font-size:15px;font-weight:900;color:var(--navy);padding-bottom:2px;border-bottom:1px solid var(--line)}
+/* PCとスマホを同じ「品名・数量・金額」表示へ統一する。 */
+.table{display:none!important}.card-list{display:block!important}.item-line{grid-template-columns:minmax(0,1fr) 62px 84px 50px 28px!important;gap:5px!important;min-height:43px;padding:5px 7px!important}.item-line .unit,.item-line input[type="number"]:nth-of-type(2){display:none!important}.item-line .item-name{font-size:14px;white-space:normal}.item-line input[type="number"]{border:1px solid var(--line);border-radius:5px;background:#fff;padding:5px;text-align:right}.item-line .money{font-size:13px}.item-detail-toggle{border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--blue);font-weight:800;font-size:11px;padding:4px}.item-card.open .detail{display:grid}.detail-price{grid-column:auto}.detail .detail-price input{width:100%;border:1px solid var(--line);border-radius:5px;padding:6px}.management-menu{display:grid;gap:8px}.management-menu button{text-align:left;padding:13px}.management-menu small{display:block;color:var(--muted);font-weight:500;margin-top:3px}@media(max-width:760px){.top .daily-actions{gap:5px}.top .daily-actions .btn{padding:7px 7px;font-size:12px}.top .brand{display:none}.workflow-bar{grid-template-columns:1fr 1fr;gap:5px}.workflow-step{padding:7px}.workflow-step span{font-size:11px}.flow-start{margin-top:2px}.item-line{grid-template-columns:minmax(0,1fr) 52px 73px 44px 25px!important;gap:3px!important}.item-line .item-name{font-size:13px}.item-detail-toggle{padding:4px 2px;font-size:10px}.detail-price{grid-column:1/-1}}
+</style>
+<script>
+/* 既存の保存・同期・印刷ロジックを使ったまま、作成画面だけを日常作業向けに整える。 */
+(function(){
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const tradeLabel=trade=>({sash:'サッシ工事',bath:'ユニットバス工事',concrete:'コンクリ打設工事',paint:'塗装工事',water:'水回り工事'})[trade]||'工事セットを選択';
+  function draft(){return Store.read(Store.keys.draft,{customer:{},items:[]})}
+  function rewriteHeader(){
+    const top=document.querySelector('.top');if(!top||top.dataset.dailyHeader)return;
+    top.dataset.dailyHeader='1';
+    top.innerHTML='<span class="brand">見積ツール <small>CLEAN</small></span><div class="daily-actions"><button class="btn" onclick="App.openCases()">案件</button><button class="btn primary" onclick="App.saveCase()">保存</button><button class="btn" onclick="App.print()">PDF</button><button class="btn manage-btn" onclick="App.openManagement()">管理</button></div>';
+  }
+  function startFlow(){
+    const start=document.querySelector('#start');if(!start||start.querySelector('.flow-start'))return;
+    const box=document.createElement('div');box.className='flow-start';
+    box.innerHTML='<h2>見積を作成する</h2><div class="flow-customer"><div><b>1　顧客を選ぶ</b><small id="flowCustomerName">Googleカレンダーから予定を選択</small></div><button class="btn primary" onclick="App.openCustomer()">顧客を選ぶ</button></div><p class="flow-next">2　工事セットを選ぶ　→　3　一括数量を入力　→　4　金額を確認してPDF</p>';
+    start.insertBefore(box,start.firstChild);
+  }
+  function refreshFlow(){
+    const data=draft(),customer=data.customer||{};
+    const name=document.querySelector('#flowCustomerName');if(name)name.textContent=customer.name?customer.name+'　'+(customer.address||''):'Googleカレンダーから予定を選択';
+    const work=document.querySelector('#work');if(!work||work.classList.contains('hide'))return;
+    let bar=work.querySelector('.workflow-bar');if(!bar){bar=document.createElement('div');bar.className='workflow-bar';work.insertBefore(bar,work.firstChild)}
+    bar.innerHTML='<div class="workflow-step current"><b>1 顧客</b><span>'+esc(customer.name||'未選択')+'</span><button class="btn sm" onclick="App.openCustomer()">変更</button></div><div class="workflow-step current"><b>2 工事</b><span>'+esc(customer.constructionName||tradeLabel(data.trade))+'</span><button class="btn sm" onclick="App.backToFlowStart()">変更</button></div><div class="workflow-step"><b>3 数量</b><span>一括数量・明細</span></div><div class="workflow-step"><b>4 確認</b><span>合計 → PDF</span></div>';
+    document.querySelectorAll('#quantityPanel .headrow h2').forEach(node=>node.innerHTML='<span class="step-title"><span class="step-no">3</span>一括数量</span>');
+    document.querySelectorAll('#work > .workspace > div > .panel .headrow h2').forEach(node=>{if(node.textContent.trim()==='明細')node.innerHTML='<span class="step-title"><span class="step-no">3</span>明細</span>'});
+  }
+  App.openManagement=function(){
+    document.querySelector('#modal').innerHTML='<h2>管理</h2><div class="management-menu"><button class="btn" onclick="App.openWarehouse()"><b>倉庫・セット管理</b><small>単品、工事セット、マスターを編集</small></button><button class="btn" onclick="App.openSync()"><b>Google Sheets 同期</b><small>マスターとセットを同期</small></button><button class="btn" onclick="App.newEstimate()"><b>新しい見積を作る</b><small>現在の作業中見積を新規に切り替え</small></button></div><div class="modal-actions"><button class="btn" onclick="App.close()">閉じる</button></div>';
+    document.querySelector('#modalBg').classList.add('open');
+  };
+  App.backToFlowStart=function(){
+    const work=document.querySelector('#work'),start=document.querySelector('#start');if(!work||!start)return;
+    work.classList.add('hide');start.classList.remove('hide');start.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  function decorateCards(){
+    document.querySelectorAll('#cards .item-card').forEach(card=>{
+      const line=card.querySelector('.item-line'),detail=card.querySelector('.detail');if(!line||!detail)return;
+      if(!line.querySelector('.item-detail-toggle')){
+        const button=document.createElement('button');button.type='button';button.className='item-detail-toggle';button.textContent='詳細';button.onclick=event=>{event.stopPropagation();card.classList.toggle('open')};
+        line.insertBefore(button,line.querySelector('.icon'));
+      }
+      if(!detail.querySelector('.detail-price')){
+        const source=[...line.querySelectorAll('input')].find(input=>(input.getAttribute('oninput')||'').includes("'price'"));
+        if(source){const match=(source.getAttribute('oninput')||'').match(/App\.setItem\((\d+),'price'/);if(match){const field=document.createElement('div');field.className='field detail-price';field.innerHTML='<label>単価</label><input type="number" inputmode="numeric" value="'+esc(source.value)+'" oninput="App.setItem('+match[1]+',\'price\',this.value)">';detail.appendChild(field)}}
+      }
+    });
+  }
+  const cardObserver=new MutationObserver(()=>{decorateCards();refreshFlow()});
+  function bootDaily(){
+    rewriteHeader();startFlow();cardObserver.observe(document.querySelector('#work'),{childList:true,subtree:true});
+    decorateCards();refreshFlow();
+  }
+  ['chooseTrade','loadCase','saveCustomer','applyCalendarEvent','newEstimate'].forEach(name=>{
+    const base=App[name];if(!base)return;
+    App[name]=function(){const result=base.apply(this,arguments);setTimeout(()=>{startFlow();decorateCards();refreshFlow()},0);return result};
+  });
+  const originalOpenCustomer=App.openCustomer;
+  App.openCustomer=function(){const result=originalOpenCustomer.apply(this,arguments);setTimeout(()=>{const title=document.querySelector('#modal h2');if(title)title.textContent='1　Googleカレンダーから顧客を選ぶ'},0);return result};
+  const originalOpenWarehouse=App.openWarehouse;
+  App.openWarehouse=function(){return originalOpenWarehouse.apply(this,arguments)};
+  window.addEventListener('load',bootDaily,{once:true});
+  bootDaily();
+})();
+</script>
+<style>
+/* 塗装ビルダー。通常の見積画面・印刷レイアウトとは分離する。 */
+.paint-builder{display:grid;gap:12px}.paint-builder h2{margin:0}.paint-step{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fff}.paint-step h3{font-size:14px;margin:0 0 8px;color:var(--navy)}.paint-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.paint-choice{display:grid;gap:5px}.paint-choice label{font-size:12px;font-weight:800;color:var(--muted)}.paint-choice select,.paint-choice input{width:100%;border:1px solid var(--line);border-radius:7px;padding:8px;background:#fff}.paint-checks{display:flex;flex-wrap:wrap;gap:7px 12px}.paint-checks label{display:inline-flex;align-items:center;gap:4px;font-weight:700}.paint-quantities{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.paint-quantity{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:7px;padding:7px}.paint-quantity label{flex:1;font-weight:800}.paint-quantity input{width:90px;border:1px solid var(--line);border-radius:5px;padding:6px;text-align:right}.paint-summary{font-size:12px;color:var(--muted);padding:2px 0}@media(max-width:760px){.paint-grid{grid-template-columns:1fr}.paint-quantities{grid-template-columns:1fr}.paint-step{padding:10px}.paint-checks{gap:7px 9px}}
+</style>
+<script>
+/*
+  塗装ビルダーの仕様表。ここだけを変更すれば、塗料名・工程・概要・標準単価を将来更新できる。
+  生成時は既存の通常明細と同じ {name,desc,qty,unit,price,group,linked} 形式になる。
+*/
+(function(){
+  const PAINT_PRICES={scaffold:1000,net:200,wash:300,prep:65000,filler:700,sealer:650,top:900,metalPrimer:750,woodPrimer:700,eaves:900,accessoryPrep:1200,accessoryPrimer:750,taspe:500,bio:450};
+  const step=(name,desc,price,unit='㎡',quantity='wall')=>({name,desc,price,unit,quantity});
+  const PAINT_SPECS={
+    scaffold:[step('足場仮設組','外部作業用足場',PAINT_PRICES.scaffold,'㎡','scaffold'),step('養生ネット張り','飛散防止養生',PAINT_PRICES.net,'㎡','scaffold')],
+    walls:{
+      mortar:{normal:[step('高圧洗浄','汚れ・粉化物等の除去',PAINT_PRICES.wash),step('下地処理','ひび割れ・不良部等の下地調整',PAINT_PRICES.prep,'組','one'),step('下塗り　パーフェクトフィラー','下地調整・上塗り密着性向上',PAINT_PRICES.filler),step('中塗り　パーフェクトトップ','上塗り1回目',PAINT_PRICES.top),step('仕上げ　パーフェクトトップ','上塗り2回目・仕上げ',PAINT_PRICES.top)],deteriorated:[step('高圧洗浄','汚れ・粉化物等の除去',PAINT_PRICES.wash),step('下地処理','ひび割れ・不良部等の下地調整',PAINT_PRICES.prep,'組','one'),step('下塗りシーラー','脆弱下地の補強・吸込み抑制',PAINT_PRICES.sealer),step('下塗り　パーフェクトフィラー','下地調整・上塗り密着性向上',PAINT_PRICES.filler),step('中塗り　パーフェクトトップ','上塗り1回目',PAINT_PRICES.top),step('仕上げ　パーフェクトトップ','上塗り2回目・仕上げ',PAINT_PRICES.top)]},
+      siding:[step('高圧洗浄','汚れ・粉化物等の除去',PAINT_PRICES.wash),step('下地処理','目地・不良部等の下地調整',PAINT_PRICES.prep,'組','one'),step('下塗り　パーフェクトサーフ','下地調整・上塗り密着性向上',PAINT_PRICES.filler),step('中塗り　パーフェクトトップ','上塗り1回目',PAINT_PRICES.top),step('仕上げ　パーフェクトトップ','上塗り2回目・仕上げ',PAINT_PRICES.top)],
+      metal:[step('高圧洗浄','表面汚れ等の除去',PAINT_PRICES.wash),step('ケレン・下地処理','目荒らし・錆等の下地処理',PAINT_PRICES.prep,'組','one'),step('下塗り　ハイポンファインプライマーII','金属部防錆・密着性向上',PAINT_PRICES.metalPrimer),step('中塗り　ファインSi','上塗り1回目',PAINT_PRICES.top),step('仕上げ　ファインSi','上塗り2回目・仕上げ',PAINT_PRICES.top)],
+      wood:[step('高圧洗浄','表面汚れ等の除去',PAINT_PRICES.wash),step('ケレン・下地処理','旧塗膜・劣化部の下地調整',PAINT_PRICES.prep,'組','one'),step('木部下塗り','木部下地調整・密着性向上',PAINT_PRICES.woodPrimer),step('中塗り　ファインSi','上塗り1回目',PAINT_PRICES.top),step('仕上げ　ファインSi','上塗り2回目・仕上げ',PAINT_PRICES.top)]
+    },
+    roofs:{
+      colonial:[step('高圧洗浄','苔・汚れ・粉化物等の除去',PAINT_PRICES.wash,'㎡','roof'),step('下地処理','不良部等の下地調整',PAINT_PRICES.prep,'組','one'),step('下塗り　ファインパーフェクトシーラー','下地補強・上塗り密着性向上',PAINT_PRICES.sealer,'㎡','roof'),step('中塗り　ファインパーフェクトベスト','上塗り1回目',PAINT_PRICES.top,'㎡','roof'),step('仕上げ　ファインパーフェクトベスト','上塗り2回目・仕上げ',PAINT_PRICES.top,'㎡','roof')],
+      metal:[step('高圧洗浄','表面汚れ等の除去',PAINT_PRICES.wash,'㎡','roof'),step('ケレン・下地処理','錆・旧塗膜等の下地処理',PAINT_PRICES.prep,'組','one'),step('下塗り　ハイポンファインプライマーII','金属部防錆・密着性向上',PAINT_PRICES.metalPrimer,'㎡','roof'),step('中塗り　ファインSi','上塗り1回目',PAINT_PRICES.top,'㎡','roof'),step('仕上げ　ファインSi','上塗り2回目・仕上げ',PAINT_PRICES.top,'㎡','roof')]
+    },
+    accessories:{
+      barge:{label:'破風',unit:'m',steps:[step('ケレン・下地処理','旧塗膜・劣化部の下地調整',PAINT_PRICES.accessoryPrep,'m','barge'),step('必要な下塗り','素材に応じた下塗り処理',PAINT_PRICES.accessoryPrimer,'m','barge'),step('ファインSi 中塗り','上塗り1回目',PAINT_PRICES.top,'m','barge'),step('ファインSi 仕上げ','上塗り2回目・仕上げ',PAINT_PRICES.top,'m','barge')]},
+      eaves:{label:'軒天',unit:'㎡',steps:[step('下地処理','汚れ・不良部等の下地調整',PAINT_PRICES.accessoryPrep,'㎡','eaves'),step('軒天塗装 1回目','軒天仕上げ塗装',PAINT_PRICES.eaves,'㎡','eaves'),step('軒天塗装 2回目','軒天仕上げ塗装',PAINT_PRICES.eaves,'㎡','eaves')]},
+      gutter:{label:'雨樋',unit:'m',steps:[step('ケレン・下地処理','表面目荒らし・下地調整',PAINT_PRICES.accessoryPrep,'m','gutter'),step('ファインSi 中塗り','上塗り1回目',PAINT_PRICES.top,'m','gutter'),step('ファインSi 仕上げ','上塗り2回目・仕上げ',PAINT_PRICES.top,'m','gutter')]},
+      awning:{label:'トタン庇',unit:'㎡',steps:[step('ケレン・下地処理','錆・旧塗膜等の下地処理',PAINT_PRICES.accessoryPrep,'㎡','awning'),step('ハイポンファインプライマーII','防錆・密着性向上',PAINT_PRICES.metalPrimer,'㎡','awning'),step('ファインSi 中塗り','上塗り1回目',PAINT_PRICES.top,'㎡','awning'),step('ファインSi 仕上げ','上塗り2回目・仕上げ',PAINT_PRICES.top,'㎡','awning')]},
+      flashing:{label:'水切り',unit:'m',steps:[step('ケレン・下地処理','錆・旧塗膜等の下地処理',PAINT_PRICES.accessoryPrep,'m','flashing'),step('ハイポンファインプライマーII','防錆・密着性向上',PAINT_PRICES.metalPrimer,'m','flashing'),step('ファインSi 中塗り','上塗り1回目',PAINT_PRICES.top,'m','flashing'),step('ファインSi 仕上げ','上塗り2回目・仕上げ',PAINT_PRICES.top,'m','flashing')]},
+      shutter:{label:'雨戸・戸袋',unit:'枚',steps:[step('ケレン・下地処理','金属部下地処理・防錆塗装・仕上げ',PAINT_PRICES.accessoryPrep,'枚','shutter'),step('ハイポンファインプライマーII','金属部下地処理・防錆塗装・仕上げ',PAINT_PRICES.metalPrimer,'枚','shutter'),step('ファインSi 中塗り','上塗り1回目',PAINT_PRICES.top,'枚','shutter'),step('ファインSi 仕上げ','上塗り2回目・仕上げ',PAINT_PRICES.top,'枚','shutter')]}
+    }
+  };
+  const state={wall:'none',roof:'none',mortar:'normal',scaffold:true,bioWall:false,bioRoof:false,taspe:false,accessories:{},quantities:{scaffold:0,wall:0,roof:0,barge:0,eaves:0,gutter:0,awning:0,flashing:0,shutter:0,other:0},otherName:'その他'};
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const selectedAccessories=()=>Object.keys(PAINT_SPECS.accessories).filter(key=>state.accessories[key]);
+  function syncState(){
+    const modal=document.querySelector('#modal');if(!modal)return;
+    state.wall=modal.querySelector('#paintWall')?.value||state.wall;state.roof=modal.querySelector('#paintRoof')?.value||state.roof;state.mortar=modal.querySelector('#paintMortar')?.value||state.mortar;
+    state.scaffold=!!modal.querySelector('#paintScaffold')?.checked;state.bioWall=!!modal.querySelector('#paintBioWall')?.checked;state.bioRoof=!!modal.querySelector('#paintBioRoof')?.checked;state.taspe=!!modal.querySelector('#paintTaspe')?.checked;
+    Object.keys(PAINT_SPECS.accessories).forEach(key=>{state.accessories[key]=!!modal.querySelector('#paintAccessory_'+key)?.checked});
+    state.accessories.other=!!modal.querySelector('#paintAccessory_other')?.checked;
+    Object.keys(state.quantities).forEach(key=>{const value=modal.querySelector('#paintQty_'+key)?.value;if(value!==undefined)state.quantities[key]=Number(value)||0});
+    state.otherName=modal.querySelector('#paintOtherName')?.value||state.otherName;
+  }
+  function quantityInput(key,label,unit){return '<div class="paint-quantity"><label for="paintQty_'+key+'">'+label+'</label><input id="paintQty_'+key+'" type="number" min="0" inputmode="decimal" value="'+(state.quantities[key]||'')+'"><span>'+unit+'</span></div>'}
+  function renderBuilder(){
+    const wallChosen=state.wall!=='none',roofChosen=state.roof!=='none',accessories=selectedAccessories();
+    const accessoryChecks=Object.entries(PAINT_SPECS.accessories).map(([key,spec])=>'<label><input id="paintAccessory_'+key+'" type="checkbox" '+(state.accessories[key]?'checked':'')+' onchange="App.paintBuilderUpdate()"> '+spec.label+'</label>').join('')+'<label><input id="paintAccessory_other" type="checkbox" '+(state.accessories.other?'checked':'')+' onchange="App.paintBuilderUpdate()"> その他</label>';
+    const quantities=[state.scaffold?quantityInput('scaffold','足場面積','㎡'):'',wallChosen?quantityInput('wall','外壁面積','㎡'):'',roofChosen?quantityInput('roof','屋根面積','㎡'):'',...accessories.map(key=>quantityInput(key,PAINT_SPECS.accessories[key].label,PAINT_SPECS.accessories[key].unit)),state.accessories.other?quantityInput('other','その他','組'):'' ].filter(Boolean).join('');
+    document.querySelector('#modal').innerHTML='<div class="paint-builder"><h2>塗装ビルダー</h2><div class="paint-step"><h3>① 外壁素材・屋根素材</h3><div class="paint-grid"><div class="paint-choice"><label>外壁素材</label><select id="paintWall" onchange="App.paintBuilderUpdate()"><option value="none">なし</option><option value="mortar" '+(state.wall==='mortar'?'selected':'')+'>モルタル</option><option value="siding" '+(state.wall==='siding'?'selected':'')+'>窯業系サイディング</option><option value="galvanized" '+(state.wall==='galvanized'?'selected':'')+'>ガルバリウム鋼板サイディング</option><option value="tin" '+(state.wall==='tin'?'selected':'')+'>トタン</option><option value="wood" '+(state.wall==='wood'?'selected':'')+'>木部外壁</option></select></div><div class="paint-choice"><label>屋根素材</label><select id="paintRoof" onchange="App.paintBuilderUpdate()"><option value="none">なし</option><option value="colonial" '+(state.roof==='colonial'?'selected':'')+'>コロニアル／カラーベスト</option><option value="tin" '+(state.roof==='tin'?'selected':'')+'>トタン</option><option value="galvanized" '+(state.roof==='galvanized'?'selected':'')+'>ガルバリウム鋼板</option></select></div></div>'+(state.wall==='mortar'?'<div class="paint-choice" style="margin-top:8px"><label>モルタルの下地状態</label><select id="paintMortar" onchange="App.paintBuilderUpdate()"><option value="normal" '+(state.mortar==='normal'?'selected':'')+'>通常</option><option value="deteriorated" '+(state.mortar==='deteriorated'?'selected':'')+'>吸込み・劣化大</option></select></div>':'')+'</div><div class="paint-step"><h3>② 必要なオプション</h3><div class="paint-checks"><label><input id="paintScaffold" type="checkbox" '+(state.scaffold?'checked':'')+' onchange="App.paintBuilderUpdate()"> 足場を入れる</label>' +(wallChosen?'<label><input id="paintBioWall" type="checkbox" '+(state.bioWall?'checked':'')+'> 外壁：バイオ殺菌洗浄</label>':'')+(roofChosen?'<label><input id="paintBioRoof" type="checkbox" '+(state.bioRoof?'checked':'')+'> 屋根：バイオ殺菌洗浄</label>':'')+(state.roof==='colonial'?'<label><input id="paintTaspe" type="checkbox" '+(state.taspe?'checked':'')+'> 縁切り／タスペーサー</label>':'')+'</div></div><div class="paint-step"><h3>③ 付帯部（複数選択）</h3><div class="paint-checks">'+accessoryChecks+'</div>'+(state.accessories.other?'<div class="paint-choice" style="margin-top:8px"><label>その他の名称</label><input id="paintOtherName" value="'+esc(state.otherName)+'" placeholder="例：門扉塗装"></div>':'')+'</div><div class="paint-step"><h3>④ 必要数量</h3><div class="paint-quantities">'+(quantities||'<div class="paint-summary">素材・オプション・付帯部を選択すると、必要な数量欄だけ表示されます。</div>')+'</div></div><div class="paint-summary">「見積に追加」後は、通常の明細として自由に編集できます。</div><div class="modal-actions"><button class="btn" onclick="App.close()">閉じる</button><button class="btn primary" onclick="App.paintBuilderAdd()">見積に追加</button></div></div>';
+    document.querySelector('#modalBg').classList.add('open');
+  }
+  function itemsFromBuilder(){
+    const result=[],add=(entries,prefix='')=>entries.forEach(entry=>{const q=entry.quantity==='one'?1:Number(state.quantities[entry.quantity]||0);result.push({name:prefix?prefix+'｜'+entry.name:entry.name,desc:entry.desc,qty:q,unit:entry.unit,price:entry.price,group:'',linked:false})});
+    if(state.scaffold)add(PAINT_SPECS.scaffold);
+    if(state.wall==='mortar')add(PAINT_SPECS.walls.mortar[state.mortar]);
+    else if(state.wall==='siding')add(PAINT_SPECS.walls.siding);
+    else if(['galvanized','tin'].includes(state.wall))add(PAINT_SPECS.walls.metal);
+    else if(state.wall==='wood')add(PAINT_SPECS.walls.wood);
+    if(state.bioWall&&state.wall!=='none')add([step('バイオ殺菌洗浄','苔・藻・カビ等の殺菌処理',PAINT_PRICES.bio,'㎡','wall')]);
+    if(state.roof==='colonial')add(PAINT_SPECS.roofs.colonial);
+    else if(['tin','galvanized'].includes(state.roof))add(PAINT_SPECS.roofs.metal);
+    if(state.bioRoof&&state.roof!=='none')add([step('バイオ殺菌洗浄','苔・藻・カビ等の殺菌処理',PAINT_PRICES.bio,'㎡','roof')]);
+    if(state.taspe&&state.roof==='colonial')add([step('縁切り／タスペーサー','屋根材重なり部の排水経路確保',PAINT_PRICES.taspe,'㎡','roof')]);
+    selectedAccessories().forEach(key=>add(PAINT_SPECS.accessories[key].steps,PAINT_SPECS.accessories[key].label));
+    if(state.accessories.other)add([step(state.otherName||'その他','その他塗装工事',0,'組','other')]);
+    return result;
+  }
+  function applyItems(items){
+    /* 一時マスターと一時セット経由で既存の chooseTrade/render/save 流れを使う。 */
+    const originalMasters=Catalog.masters(),originalTemplates=Catalog.templates(),token='paint_builder_'+Date.now();
+    const temporaryMasters=items.map((item,index)=>({id:token+'_m_'+index,trade:'paint',...item}));
+    const temporaryTemplate={id:token,trade:'paint',name:'塗装工事',items:temporaryMasters.map(item=>item.id)};
+    Catalog.saveMasters(originalMasters.concat(temporaryMasters));Catalog.saveTemplates([temporaryTemplate].concat(originalTemplates));
+    try{baseChooseTrade('paint')}finally{Catalog.saveMasters(originalMasters);Catalog.saveTemplates(originalTemplates)}
+  }
+  const baseChooseTrade=App.chooseTrade;
+  App.chooseTrade=function(trade){if(trade==='paint'){App.openPaintBuilder();return}return baseChooseTrade.apply(this,arguments)};
+  App.openPaintBuilder=function(){renderBuilder()};
+  App.paintBuilderUpdate=function(){syncState();renderBuilder()};
+  App.paintBuilderAdd=function(){syncState();const items=itemsFromBuilder();if(!items.length){alert('外壁・屋根・足場・付帯部のいずれかを選択してください。');return}applyItems(items);App.close()};
+  window.PAINT_SPECS=PAINT_SPECS;
+})();
+</script>
 <script>App.start();</script>
 </body></html>
