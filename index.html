@@ -919,7 +919,9 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
       }
     });
   }
-  const cardObserver=new MutationObserver(()=>{decorateCards();refreshFlow()});
+  /* 明細の再描画だけを監視する。ここで進捗バーまで再描画すると、自身のDOM更新を
+     再び監視して無限更新になるため、進捗バーは操作直後のrefreshFlowだけで更新する。 */
+  const cardObserver=new MutationObserver(()=>{decorateCards()});
   function bootDaily(){
     rewriteHeader();startFlow();cardObserver.observe(document.querySelector('#work'),{childList:true,subtree:true});
     decorateCards();refreshFlow();
