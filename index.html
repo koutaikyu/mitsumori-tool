@@ -1009,8 +1009,11 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   }
   function applyItems(items){
     /* 一時マスターと一時セット経由で既存の chooseTrade/render/save 流れを使う。 */
+    /* 「もう一つ工事を追加」から来た場合だけ、今の通常明細を先頭に残してから塗装工程を足す。 */
+    const preserved=Array.isArray(window.__appendPaintItems)?window.__appendPaintItems:[];
+    window.__appendPaintItems=null;
     const originalMasters=Catalog.masters(),originalTemplates=Catalog.templates(),token='paint_builder_'+Date.now();
-    const temporaryMasters=items.map((item,index)=>({id:token+'_m_'+index,trade:'paint',...item}));
+    const temporaryMasters=preserved.concat(items).map((item,index)=>({id:token+'_m_'+index,trade:'paint',...item}));
     const temporaryTemplate={id:token,trade:'paint',name:'塗装工事',items:temporaryMasters.map(item=>item.id)};
     Catalog.saveMasters(originalMasters.concat(temporaryMasters));Catalog.saveTemplates([temporaryTemplate].concat(originalTemplates));
     try{baseChooseTrade('paint')}finally{Catalog.saveMasters(originalMasters);Catalog.saveTemplates(originalTemplates)}
@@ -1021,6 +1024,83 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   App.paintBuilderUpdate=function(){syncState();renderBuilder()};
   App.paintBuilderAdd=function(){syncState();const items=itemsFromBuilder();if(!items.length){alert('外壁・屋根・足場・付帯部のいずれかを選択してください。');return}applyItems(items);App.close()};
   window.PAINT_SPECS=PAINT_SPECS;
+})();
+</script>
+<script>
+/* A4横2ページの印刷仕上げ。画面側とデータ形式には影響させない。 */
+(function(){
+  const basePrint=App.print;
+  App.print=function(){
+    const realOpen=window.open;
+    window.open=function(){
+      const win=realOpen.apply(window,arguments);
+      if(!win?.document)return win;
+      const write=win.document.write.bind(win.document);
+      win.document.write=function(source){
+        let html=String(source);
+        /* 明細行の数に合わせ、2枚目の表だけを用紙高へ均等に広げる。 */
+        const detailRows=(html.match(/<tr(?: class="(?:blank|exp-r)")?><td/g)||[]).length;
+        const rowHeight=Math.max(5,Math.min(11,150/Math.max(1,detailRows)));
+        const printCss='@page{margin:5mm 6mm}' +
+          /* 1枚目: 枠線・太字・金額線を抑え、読みやすく軽くする。 */
+          '.hyoshi{padding:3mm 4mm}.h-title-box{border-width:2px;padding:3px 0;margin-bottom:6px}.h-title{font-size:20pt;font-weight:600;letter-spacing:.22em}.h-top{margin-bottom:6px}.client-name{font-size:16pt;font-weight:600;border-bottom-width:2px}.co-block{font-size:11pt;line-height:1.55}.co-name{font-size:13pt;font-weight:600}.kingaku-wrap{margin:3px 0;min-width:230px}.k-label{font-size:13pt}.k-num{font-size:15pt;border-bottom-width:2px;min-width:210px}.k-sub{font-size:9pt}.hosho-box{font-size:14pt;font-weight:600;margin-top:7px;padding:3px 0}.koji-tbl{margin-top:6px;font-size:11pt}.koji-tbl td{border-width:1px;padding:3px 5px}.koji-tbl .lbl{font-weight:600}.koji-name-big{font-size:14pt;font-weight:600}' +
+          /* 2枚目: 余白を詰め、表を横いっぱい・縦いっぱいに使う。 */
+          '.meisai{padding:1mm 2mm}.m-header{margin-bottom:3px}.m-title{font-size:16pt;border-bottom-width:2px;padding-bottom:1px}.meisai .m-tbl{font-size:10pt!important;width:100%!important}.meisai .m-tbl th{font-size:9pt!important;padding:2px 3px!important;border-width:1px}.meisai .m-tbl td{height:'+rowHeight.toFixed(2)+'mm!important;padding:1px 3px!important;border-width:1px}.meisai .m-tbl .blank td{height:'+rowHeight.toFixed(2)+'mm!important}.meisai .m-tbl tbody>tr:not(.sum-r):not(.grand-r){height:'+rowHeight.toFixed(2)+'mm}.meisai .grand-r td{font-size:13pt!important}.meisai .sum-r td{font-size:10pt!important}';
+        html=html.replace('</style>',printCss+'</style>');
+        return write(html);
+      };
+      return win;
+    };
+    try{return basePrint()}finally{window.open=realOpen}
+  };
+})();
+</script>
+<style>
+/* 工事を追加する導線と、工種ごとに必要な数量だけを表示する。 */
+.add-trade-btn{white-space:nowrap}
+.additional-trades{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.additional-trades .btn{min-height:52px;text-align:left}.additional-trades small{display:block;color:var(--muted);margin-top:3px;font-weight:500}@media(max-width:760px){.additional-trades{grid-template-columns:1fr}.add-trade-btn{font-size:11px;padding:6px 8px}}
+</style>
+<script>
+/* 塗装はビルダー内の数量だけを使う。ほかの工事の数量連動はそのまま残す。 */
+(function(){
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const definitions={sashCount:['箇所数','組'],concreteArea:['施工面積','㎡'],paintArea:['塗装面積','㎡'],scaffoldArea:['足場面積','㎡'],length:['長さ','m']};
+  const draft=()=>Store.read(Store.keys.draft,{items:[],quantities:{}});
+  function syncLinkedQuantities(){
+    const panel=document.querySelector('#quantityPanel'),boxes=document.querySelector('#quantityBoxes');if(!panel||!boxes)return;
+    const data=draft(),groups=[...new Set((data.items||[]).filter(item=>item.linked&&definitions[item.group]).map(item=>item.group))]
+      .filter(group=>!(data.trade==='paint'&&(group==='paintArea'||group==='scaffoldArea')));
+    const signature=(data.trade||'')+'|'+groups.join('|')+'|'+groups.map(group=>data.quantities?.[group]??'').join('|');
+    if(panel.dataset.linkedSignature===signature)return;
+    panel.dataset.linkedSignature=signature;
+    panel.classList.toggle('hide',groups.length===0);
+    if(!groups.length)return;
+    const title=panel.querySelector('.headrow h2');if(title)title.innerHTML='<span class="step-title"><span class="step-no">3</span>数量連動</span>';
+    boxes.innerHTML=groups.map(group=>{const [label,unit]=definitions[group];return '<div class="field qbox"><label>'+label+'</label><input type="number" value="'+esc(data.quantities?.[group]??'')+'" oninput="App.applyGroup(\''+group+'\',this.value)"><span>'+unit+'</span></div>'}).join('');
+  }
+  function addExtraButton(){
+    const head=[...document.querySelectorAll('#work .panel .headrow')].find(node=>node.querySelector('h2')?.textContent.trim().includes('明細'));if(!head||head.querySelector('.add-trade-btn'))return;
+    const button=document.createElement('button');button.type='button';button.className='btn sm add-trade-btn';button.textContent='＋ もう一つ工事を追加';button.onclick=App.openAdditionalTrade;head.insertBefore(button,head.querySelector('button'));
+  }
+  App.openAdditionalTrade=function(){
+    const entries=[['sash','サッシ工事','標準セットを追加'],['bath','ユニットバス工事','標準セットを追加'],['concrete','コンクリ打設工事','施工面積と連動'],['paint','塗装工事','塗装ビルダーを開く'],['water','水回り工事','標準セットを追加']];
+    const modal=document.querySelector('#modal');modal.innerHTML='<h2>もう一つ工事を追加</h2><p class="notice">今ある明細は残したまま、追加する工事だけを足します。</p><div class="additional-trades">'+entries.map(([id,name,note])=>'<button class="btn" onclick="App.addAdditionalTrade(\''+id+'\')"><b>'+name+'</b><small>'+note+'</small></button>').join('')+'</div><div class="modal-actions"><button class="btn" onclick="App.close()">閉じる</button></div>';document.querySelector('#modalBg').classList.add('open');
+  };
+  App.addAdditionalTrade=function(trade){
+    const before=draft().items||[];
+    if(trade==='paint'){
+      window.__appendPaintItems=JSON.parse(JSON.stringify(before));
+      App.close();App.chooseTrade('paint');return;
+    }
+    const template=Catalog.templates().find(item=>item.trade===trade);
+    if(!template){alert('この工事の標準セットが見つかりません。管理からセットを作成してください。');return}
+    App.addTemplate(template.id);
+    setTimeout(()=>{addExtraButton();syncLinkedQuantities()},0);
+  };
+  const observe=new MutationObserver(()=>{queueMicrotask(()=>{addExtraButton();syncLinkedQuantities()})});
+  function boot(){observe.observe(document.querySelector('#work'),{childList:true,subtree:true});addExtraButton();syncLinkedQuantities()}
+  ['chooseTrade','loadCase','newEstimate','paintBuilderAdd'].forEach(name=>{const base=App[name];if(!base)return;App[name]=function(){const result=base.apply(this,arguments);setTimeout(()=>{addExtraButton();syncLinkedQuantities()},0);return result}});
+  boot();window.addEventListener('load',boot,{once:true});
 })();
 </script>
 <script>App.start();</script>
