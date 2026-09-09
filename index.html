@@ -1156,5 +1156,76 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   };
 })();
 </script>
+<style>
+/* 倉庫の単品は「差額・仕様追加」用に絞り、カテゴリごとに短く表示する。 */
+.warehouse-category{min-width:110px}.warehouse-master-category{font-size:11px;color:var(--muted);margin-left:auto}.warehouse-master .warehouse-actions{display:flex;gap:5px}.warehouse-master-editor .master-category{grid-column:1/-1}@media(max-width:760px){.warehouse-pane-head .warehouse-category{width:100%;flex-basis:100%}.warehouse-master .warehouse-actions{grid-column:2;grid-row:1;flex-direction:column}.warehouse-master .warehouse-actions .btn{padding:5px;font-size:11px}}
+</style>
+<script>
+/* 単品 = サイズ・グレード・オプション。セット = 工事一式、という役割に分ける。 */
+(function(){
+  const categories=['サッシ','ユニットバス','システムキッチン','トイレ','洗面','玄関ドア','床','屋根','その他'];
+  const candidates={
+    'サッシ':['小窓','腰窓','掃き出し窓','FIX窓','2枚建','4枚建','面格子付き','雨戸付き','戸袋付き','複層ガラス','Low-E複層ガラス','防音仕様'],
+    'ユニットバス':['1216','1317','1616','1618','1620','標準','中級','上位','浴室暖房乾燥機','手すり','断熱浴槽','浴室窓交換'],
+    'システムキッチン':['I型2100','I型2250','I型2400','I型2550','I型2700','L型','標準','中級','上位','食洗機','IH','ガスコンロ','レンジフード','カップボード','キッチンパネル'],
+    'トイレ':['組み合わせ便器','一体型便器','タンクレス','手洗い付き','手洗い別','温水洗浄便座','トイレ内装セット','手すり'],
+    '洗面':['600幅','750幅','900幅','1000幅','1面鏡','3面鏡','トール収納','洗面内装セット'],
+    '玄関ドア':['片開き','親子','引戸','断熱仕様','採風仕様','電気錠','カバー工法'],
+    '床':['フローリング張替え','フローリング上貼り','CF張替え','フロアタイル','畳からフローリング','床暖房対応'],
+    '屋根':['棟板金交換','貫板交換','雪止め','谷板金','屋根カバー工法','屋根葺き替え']
+  };
+  const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let selectedCategory='サッシ';
+  const infer=master=>{
+    if(master.warehouseCategory&&categories.includes(master.warehouseCategory))return master.warehouseCategory;
+    if(master.trade==='sash'||/窓|サッシ|ガラス|雨戸|戸袋/.test(master.name||''))return 'サッシ';
+    if(master.trade==='bath'||/浴室|浴槽|ユニットバス/.test(master.name||''))return 'ユニットバス';
+    if(/キッチン|食洗機|IH|コンロ|レンジフード|カップボード/.test(master.name||''))return 'システムキッチン';
+    if(/トイレ|便器|便座/.test(master.name||''))return 'トイレ';
+    if(/洗面/.test(master.name||''))return '洗面';
+    if(/玄関|ドア/.test(master.name||''))return '玄関ドア';
+    if(/床|フローリング|CF|畳/.test(master.name||''))return '床';
+    if(/屋根|板金|雪止め|貫板/.test(master.name||''))return '屋根';
+    return 'その他';
+  };
+  function seedCategories(){
+    let changed=false,masters=Catalog.masters().map(master=>{const warehouseCategory=infer(master);if(master.warehouseCategory===warehouseCategory)return master;changed=true;return {...master,warehouseCategory}});
+    if(!Store.read('warehouseCategorySeedV1',false)){
+      Object.entries(candidates).forEach(([warehouseCategory,names])=>names.forEach(name=>{
+        if(!masters.some(master=>master.warehouseCategory===warehouseCategory&&master.name===name)){masters.push({id:Catalog.id('m'),trade:'other',warehouseCategory,name,desc:'',qty:1,unit:'組',price:0,group:''});changed=true}
+      }));
+      Store.write('warehouseCategorySeedV1',true);
+    }
+    if(changed){Catalog.saveMasters(masters);Sync.push().catch(()=>{})}
+  }
+  const priorAddMaster=App.addMasterToEstimate;
+  const priorAddToSet=App.warehouseAddToSet;
+  const priorDeleteMaster=App.warehouseDeleteMaster;
+  const priorEditMaster=App.warehouseEditMaster;
+  const priorOpenMaster=App.openMaster;
+  function optionList(selected){return categories.map(category=>'<option value="'+category+'"'+(category===selected?' selected':'')+'>'+category+'</option>').join('')}
+  App.openWarehouse=function(){
+    seedCategories();
+    const templates=Catalog.templates(),masters=Catalog.masters();
+    const selectedTemplate=templates[0]?.id||'';
+    if(!categories.includes(selectedCategory))selectedCategory='その他';
+    const visible=masters.filter(master=>infer(master)===selectedCategory);
+    const sets=templates.map(template=>'<div class="warehouse-set" ondragover="App.warehouseAllowDrop(event)" ondragleave="this.classList.remove(\'drag-over\')" ondrop="App.warehouseDrop(event,\''+esc(template.id)+'\')"><button class="warehouse-set-add" onclick="App.addTemplate(\''+esc(template.id)+'\')"><strong>'+esc(template.name)+'</strong><small>'+(template.items||[]).length+'項目 · タップで見積へ追加</small></button><div class="warehouse-actions"><button class="btn sm" onclick="App.warehouseEditSet(\''+esc(template.id)+'\')">編集</button><button class="warehouse-delete" title="セットを削除" onclick="App.warehouseDeleteSet(\''+esc(template.id)+'\')">×</button></div></div>').join('')||'<div class="empty">セットがありません</div>';
+    const cards=visible.map(master=>'<div class="warehouse-master" data-master-id="'+esc(master.id)+'" data-master-ready="1"><button class="warehouse-master-add" draggable="true" ondragstart="App.warehouseDragStart(event,\''+esc(master.id)+'\')" onclick="App.addMasterToEstimate(\''+esc(master.id)+'\')"><strong>'+esc(master.name)+'</strong><small>'+esc(master.unit||'組')+' · ¥'+Number(master.price||0).toLocaleString()+'</small></button><div class="warehouse-actions"><button class="btn sm" onclick="App.warehouseAddToSet(\''+esc(master.id)+'\',\''+esc(selectedTemplate)+'\')">セット＋</button><button class="btn sm" onclick="App.warehouseEditMaster(\''+esc(master.id)+'\')">編集</button><button class="warehouse-delete" title="単品を削除" onclick="App.warehouseDeleteMaster(\''+esc(master.id)+'\')">×</button></div></div>').join('')||'<div class="empty">このカテゴリの単品はありません</div>';
+    const modal=document.querySelector('#modal');modal.className='modal warehouse-modal';
+    modal.innerHTML='<div class="warehouse-full-head"><h2>倉庫</h2><button class="btn sm" onclick="App.newTemplate()">＋ セット</button><button class="btn sm" onclick="App.warehouseNewCategoryMaster()">＋ 単品</button><button class="btn" onclick="App.close()">閉じる</button></div><div class="warehouse-full-body"><section class="warehouse-pane"><div class="warehouse-pane-head"><span>単品</span><select class="warehouse-category" onchange="App.warehouseCategory(this.value)">'+optionList(selectedCategory)+'</select></div><div class="warehouse-scroll">'+cards+'</div></section><section class="warehouse-pane"><div class="warehouse-pane-head"><span>セット</span><span class="warehouse-target-note">単品をドラッグして追加</span></div><div class="warehouse-scroll">'+sets+'</div></section></div>';
+    document.querySelector('#modalBg').classList.add('open');
+  };
+  App.warehouseCategory=function(category){selectedCategory=categories.includes(category)?category:'その他';App.openWarehouse()};
+  App.warehouseNewCategoryMaster=function(){
+    const category=selectedCategory;priorOpenMaster();const modal=document.querySelector('#modal');
+    const preserveCategory=()=>{const id=modal?.dataset.autoMasterId;if(!id)return;const masters=Catalog.masters(),index=masters.findIndex(master=>master.id===id);if(index<0||masters[index].warehouseCategory===category)return;masters[index]={...masters[index],warehouseCategory:category};Catalog.saveMasters(masters);Sync.push().catch(()=>{})};
+    modal?.addEventListener('input',()=>setTimeout(preserveCategory,0));modal?.addEventListener('change',()=>setTimeout(preserveCategory,0));
+  };
+  App.warehouseEditMaster=function(id){priorEditMaster(id);const editor=document.querySelector('.warehouse-master[data-master-id="'+id+'"] .warehouse-master-editor');if(!editor)return;const master=Catalog.masters().find(item=>item.id===id);const category=document.createElement('select');category.className='master-category';category.innerHTML=optionList(infer(master));category.onchange=()=>{const masters=Catalog.masters(),index=masters.findIndex(item=>item.id===id);if(index>=0){masters[index]={...masters[index],warehouseCategory:category.value};Catalog.saveMasters(masters);Sync.push().catch(()=>{})}};editor.append(category)};
+  /* 既存の追加・削除・ドラッグ・セット編集関数はそのまま利用する。 */
+  window.addEventListener('load',seedCategories,{once:true});
+})();
+</script>
 <script>App.start();</script>
 </body></html>
