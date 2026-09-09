@@ -1068,8 +1068,10 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   const draft=()=>Store.read(Store.keys.draft,{items:[],quantities:{}});
   function syncLinkedQuantities(){
     const panel=document.querySelector('#quantityPanel'),boxes=document.querySelector('#quantityBoxes');if(!panel||!boxes)return;
+    /* 塗装の面積・足場面積は旧データでも塗装ビルダー内で完結させる。
+       保存済み案件の trade 値は古い名称のことがあるので、trade 値には依存しない。 */
     const data=draft(),groups=[...new Set((data.items||[]).filter(item=>item.linked&&definitions[item.group]).map(item=>item.group))]
-      .filter(group=>!(data.trade==='paint'&&(group==='paintArea'||group==='scaffoldArea')));
+      .filter(group=>group!=='paintArea'&&group!=='scaffoldArea');
     const signature=(data.trade||'')+'|'+groups.join('|')+'|'+groups.map(group=>data.quantities?.[group]??'').join('|');
     if(panel.dataset.linkedSignature===signature)return;
     panel.dataset.linkedSignature=signature;
