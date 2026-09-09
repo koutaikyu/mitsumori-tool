@@ -1238,11 +1238,11 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
 /* 塗装ビルダーの基本単価は、倉庫の「塗装｜基本単価」セットで一元編集する。 */
 (function(){
   const priceRows=[
-    ['scaffold','足場仮設組','外部作業用足場','㎡',1000],['net','養生ネット張り','飛散防止養生','㎡',200],['wash','高圧洗浄','汚れ・粉化物等の除去','㎡',300],
-    ['prep','下地処理・ケレン','ひび割れ・錆等の下地調整','組',65000],['filler','パーフェクトフィラー／サーフ','下地調整・密着性向上','㎡',700],['sealer','下塗りシーラー','下地補強・吸込み抑制','㎡',650],
-    ['top','上塗り（パーフェクトトップ／ファインSi）','上塗り1回目・2回目','㎡',900],['metalPrimer','ハイポンファインプライマーII','金属部防錆・密着性向上','㎡',750],['woodPrimer','木部下塗り','木部下地調整・密着性向上','㎡',700],
-    ['eaves','軒天塗装','軒天仕上げ塗装','㎡',900],['accessoryPrep','付帯部ケレン・下地処理','付帯部の下地調整','m',1200],['accessoryPrimer','付帯部下塗り','素材に応じた下塗り処理','m',750],
-    ['taspe','縁切り／タスペーサー','屋根材重なり部の排水経路確保','㎡',500],['bio','バイオ殺菌洗浄','苔・藻・カビ等の殺菌処理','㎡',450]
+    ['scaffold','足場仮設組','外部作業用足場','㎡',1000,'scaffoldArea'],['net','養生ネット張り','飛散防止養生','㎡',200,'scaffoldArea'],['wash','高圧洗浄','汚れ・粉化物等の除去','㎡',300,'paintArea'],
+    ['prep','下地処理・ケレン','ひび割れ・錆等の下地調整','組',65000,''],['filler','パーフェクトフィラー／サーフ','下地調整・密着性向上','㎡',700,'paintArea'],['sealer','下塗りシーラー','下地補強・吸込み抑制','㎡',650,'paintArea'],
+    ['top','上塗り（パーフェクトトップ／ファインSi）','上塗り1回目・2回目','㎡',900,'paintArea'],['metalPrimer','ハイポンファインプライマーII','金属部防錆・密着性向上','㎡',750,'paintArea'],['woodPrimer','木部下塗り','木部下地調整・密着性向上','㎡',700,'paintArea'],
+    ['eaves','軒天塗装','軒天仕上げ塗装','㎡',900,'paintArea'],['accessoryPrep','付帯部ケレン・下地処理','付帯部の下地調整','m',1200,'length'],['accessoryPrimer','付帯部下塗り','素材に応じた下塗り処理','m',750,'length'],
+    ['taspe','縁切り／タスペーサー','屋根材重なり部の排水経路確保','㎡',500,'paintArea'],['bio','バイオ殺菌洗浄','苔・藻・カビ等の殺菌処理','㎡',450,'paintArea']
   ];
   const priceMap={
     '足場仮設組':'scaffold','養生ネット張り':'net','高圧洗浄':'wash','バイオ殺菌洗浄':'bio','縁切り／タスペーサー':'taspe',
@@ -1252,7 +1252,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   };
   function ensurePaintPriceSet(){
     let changed=false;const masters=Catalog.masters(),byKey=new Map(masters.filter(master=>master.paintPriceKey).map(master=>[master.paintPriceKey,master]));
-    priceRows.forEach(([paintPriceKey,name,desc,unit,price])=>{if(byKey.has(paintPriceKey))return;const master={id:Catalog.id('m'),trade:'paint',warehouseCategory:'その他',paintPriceKey,name,desc,qty:1,unit,price,group:''};masters.push(master);byKey.set(paintPriceKey,master);changed=true});
+    priceRows.forEach(([paintPriceKey,name,desc,unit,price,group])=>{const current=byKey.get(paintPriceKey);if(current){if(current.group!==group){Object.assign(current,{group});changed=true}return}const master={id:Catalog.id('m'),trade:'paint',warehouseCategory:'その他',paintPriceKey,name,desc,qty:1,unit,price,group};masters.push(master);byKey.set(paintPriceKey,master);changed=true});
     const templates=Catalog.templates(),id='paint-price-settings',index=templates.findIndex(template=>template.id===id),items=priceRows.map(([key])=>byKey.get(key).id);
     const template={id,trade:'paint',name:'塗装｜基本単価（ビルダー用）',items};
     if(index<0){templates.unshift(template);changed=true}else if(JSON.stringify(templates[index].items)!==JSON.stringify(items)){templates[index]={...templates[index],...template};changed=true}
@@ -1285,12 +1285,22 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   ];
   function protectSetItems(){
     const masters=Catalog.masters(),templates=Catalog.templates();let changed=false;
+    /* 保存済み案件に残る明細を最優先の復元元にする。品名・概要・単価を推測しない。 */
+    const restoreFromSavedCase=(template,trade,minItems)=>{
+      if(!template||((template.items||[]).length>=minItems))return false;
+      const source=Store.read(Store.keys.cases,[]).filter(record=>record&&((record.trade===trade)||new RegExp(trade==='sash'?'サッシ':'ユニットバス').test(record.customer?.constructionName||''))&&Array.isArray(record.items)&&record.items.length>=minItems).sort((a,b)=>b.items.length-a.items.length)[0];
+      if(!source)return false;
+      const ids=[];source.items.forEach((item,index)=>{const id='recovered_'+trade+'_'+index+'_'+Date.now().toString(36);masters.push({id,trade,name:item.name||'',desc:item.desc||'',qty:+item.qty||1,unit:item.unit||'組',price:+item.price||0,group:item.group||'',setOnly:true});ids.push(id)});template.items=ids;return true;
+    };
+    const sash=templates.find(template=>template.id==='tpl_sash'||template.trade==='sash'||/サッシ/.test(template.name||''));
+    if(restoreFromSavedCase(sash,'sash',9))changed=true;
+    const bath=templates.find(template=>template.id==='tpl_bath'||template.trade==='bath'||/ユニットバス/.test(template.name||''));
+    if(restoreFromSavedCase(bath,'bath',9))changed=true;
     /* 削除で空になった標準ユニットバスセットを、元の施工明細と単価で復元する。 */
-    const bath=templates.find(template=>template.id==='tpl_bath');
-    if(bath&&!Store.read('bathSetRecoveredV2',false)&&(!bath.items||bath.items.length<bathRecovery.length)){
+    if(bath&&!Store.read('bathSetRecoveredV3',false)&&(!bath.items||bath.items.length<bathRecovery.length)){
       bathRecovery.forEach(item=>{if(!masters.some(master=>master.id===item.id)){masters.push({...item,setOnly:true});changed=true}});
       bath.items=bathRecovery.map(item=>item.id);changed=true;
-      Store.write('bathSetRecoveredV2',true);
+      Store.write('bathSetRecoveredV3',true);
     }
     const memberIds=new Set(templates.flatMap(template=>template.items||[]));
     masters.forEach((master,index)=>{if(memberIds.has(master.id)&&!master.setOnly){masters[index]={...master,setOnly:true};changed=true}});
