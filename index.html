@@ -95,7 +95,7 @@ if(cleanCachedTemplates.length&&!cleanCachedTemplates.some(t=>Array.isArray(t.it
 /* Warehouse: standalone items are selectable, and edited rows keep their master IDs. */
 (function(){
 const esc=v=>String(v??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
-const units=['式','㎡','m','組','個','㎥'],groups=[['','連動なし'],['sashCount','サッシ数'],['concreteArea','コンクリ面積'],['paintArea','塗装面積'],['scaffoldArea','足場面積'],['length','長さ']];
+const units=['式','㎡','m','組','個','㎥'],groups=[['','連動なし'],['sashCount','サッシ数'],['concreteArea','コンクリ面積'],['paintArea','塗装面積'],['scaffoldArea','足場面積'],['length','樋長さ']];
 const modal=html=>{document.querySelector('#modal').innerHTML=html;document.querySelector('#modalBg').classList.add('open')};
 const unitOptions=v=>units.map(x=>'<option'+(x===v?' selected':'')+'>'+x+'</option>').join('');
 const groupOptions=v=>groups.map(x=>'<option value="'+x[0]+'"'+(x[0]===v?' selected':'')+'>'+x[1]+'</option>').join('');
@@ -721,7 +721,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     card.querySelector('.warehouse-master-editor')?.remove();
     const esc=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
     const editor=document.createElement('div');editor.className='warehouse-master-editor';
-    editor.innerHTML='<input class="master-name" value="'+esc(master.name)+'" placeholder="品名"><input class="master-desc" value="'+esc(master.desc)+'" placeholder="概要"><input class="master-qty" type="number" value="'+(+master.qty||0)+'"><select class="master-unit"><option '+(master.unit==='組'?'selected':'')+'>組</option><option '+(master.unit==='㎡'?'selected':'')+'>㎡</option><option '+(master.unit==='m'?'selected':'')+'>m</option><option '+(master.unit==='個'?'selected':'')+'>個</option><option '+(master.unit==='㎥'?'selected':'')+'>㎥</option></select><input class="master-price" type="number" value="'+(+master.price||0)+'"><select class="master-group"><option value="">連動なし</option><option value="sashCount">サッシ数</option><option value="concreteArea">コンクリ面積</option><option value="paintArea">塗装面積</option><option value="scaffoldArea">足場面積</option><option value="length">長さ</option></select>';
+    editor.innerHTML='<input class="master-name" value="'+esc(master.name)+'" placeholder="品名"><input class="master-desc" value="'+esc(master.desc)+'" placeholder="概要"><input class="master-qty" type="number" value="'+(+master.qty||0)+'"><select class="master-unit"><option '+(master.unit==='組'?'selected':'')+'>組</option><option '+(master.unit==='㎡'?'selected':'')+'>㎡</option><option '+(master.unit==='m'?'selected':'')+'>m</option><option '+(master.unit==='個'?'selected':'')+'>個</option><option '+(master.unit==='㎥'?'selected':'')+'>㎥</option></select><input class="master-price" type="number" value="'+(+master.price||0)+'"><select class="master-group"><option value="">連動なし</option><option value="sashCount">サッシ数</option><option value="concreteArea">コンクリ面積</option><option value="paintArea">塗装面積</option><option value="scaffoldArea">足場面積</option><option value="length">樋長さ</option></select>';
     editor.querySelector('.master-group').value=master.group||'';
     const save=()=>{
       const masters=Catalog.masters(),index=masters.findIndex(item=>item.id===id);if(index<0)return;
@@ -748,7 +748,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
 (function(){
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const unitList=['組','㎡','m','個','㎥'];
-  const groupList=[['','連動なし'],['sashCount','サッシ数'],['concreteArea','コンクリ面積'],['paintArea','塗装面積'],['scaffoldArea','足場面積'],['length','長さ']];
+  const groupList=[['','連動なし'],['sashCount','サッシ数'],['concreteArea','コンクリ面積'],['paintArea','塗装面積'],['scaffoldArea','足場面積'],['length','樋長さ']];
   let syncTimer;
   const queueSync=()=>{clearTimeout(syncTimer);syncTimer=setTimeout(()=>Sync.push().catch(()=>{}),700)};
   const row=(item={})=>'<div class="edit-row" data-stable-row data-master-id="'+esc(item.id||'')+'"><button class="btn sm" type="button" onclick="App.stableMoveRow(this,-1)">↑</button><input class="name" value="'+esc(item.name)+'" placeholder="品名"><input class="desc" value="'+esc(item.desc)+'" placeholder="概要"><input class="qty" type="number" inputmode="decimal" value="'+(+item.qty||0)+'"><select class="unit">'+unitList.map(unit=>'<option value="'+unit+'"'+(unit===(item.unit==='式'?'組':item.unit)?' selected':'')+'>'+unit+'</option>').join('')+'</select><input class="price" type="number" inputmode="numeric" value="'+(+item.price||0)+'"><select class="group">'+groupList.map(([key,label])=>'<option value="'+key+'"'+(key===(item.group||'')?' selected':'')+'>'+label+'</option>').join('')+'</select><button class="btn sm" type="button" onclick="App.stableMoveRow(this,1)">↓</button><button class="icon" type="button" onclick="App.stableRemoveRow(this)">×</button></div>';
@@ -992,7 +992,8 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     document.querySelector('#modalBg').classList.add('open');
   }
   function itemsFromBuilder(){
-    const result=[],add=(entries,prefix='')=>entries.forEach(entry=>{const q=entry.quantity==='one'?1:Number(state.quantities[entry.quantity]||0);result.push({name:prefix?prefix+'｜'+entry.name:entry.name,desc:entry.desc,qty:q,unit:entry.unit,price:entry.price,group:'',linked:false})});
+    const paintGroups={scaffold:'paintScaffold',wall:'paintWall',roof:'paintRoof',barge:'paintBarge',eaves:'paintEaves',gutter:'paintGutter',awning:'paintAwning',flashing:'paintFlashing',shutter:'paintShutter',other:'paintOther'};
+    const result=[],add=(entries,prefix='')=>entries.forEach(entry=>{const q=entry.quantity==='one'?1:Number(state.quantities[entry.quantity]||0),group=paintGroups[entry.quantity]||'';result.push({name:prefix?prefix+'｜'+entry.name:entry.name,desc:entry.desc,qty:q,unit:entry.unit,price:entry.price,group,linked:!!group})});
     if(state.scaffold)add(PAINT_SPECS.scaffold);
     if(state.wall==='mortar')add(PAINT_SPECS.walls.mortar[state.mortar]);
     else if(state.wall==='siding')add(PAINT_SPECS.walls.siding);
@@ -1064,7 +1065,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
 /* 塗装はビルダー内の数量だけを使う。ほかの工事の数量連動はそのまま残す。 */
 (function(){
   const esc=value=>String(value??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const definitions={sashCount:['箇所数','組'],concreteArea:['施工面積','㎡'],paintArea:['塗装面積','㎡'],scaffoldArea:['足場面積','㎡'],length:['長さ','m']};
+  const definitions={sashCount:['箇所数','組'],concreteArea:['施工面積','㎡'],paintArea:['塗装面積','㎡'],scaffoldArea:['足場面積','㎡'],length:['樋長さ','m'],paintLegacyArea:['塗装面積','㎡'],paintScaffold:['足場面積','㎡'],paintWall:['外壁面積','㎡'],paintRoof:['屋根面積','㎡'],paintBarge:['破風','m'],paintEaves:['軒天','㎡'],paintGutter:['樋長さ','m'],paintAwning:['トタン庇','㎡'],paintFlashing:['水切り','m'],paintShutter:['雨戸・戸袋','枚'],paintOther:['その他','組']};
   const draft=()=>Store.read(Store.keys.draft,{items:[],quantities:{}});
   function syncLinkedQuantities(){
     const panel=document.querySelector('#quantityPanel'),boxes=document.querySelector('#quantityBoxes');if(!panel||!boxes)return;
@@ -1084,6 +1085,38 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const head=[...document.querySelectorAll('#work .panel .headrow')].find(node=>node.querySelector('h2')?.textContent.trim().includes('明細'));if(!head||head.querySelector('.add-trade-btn'))return;
     const button=document.createElement('button');button.type='button';button.className='btn sm add-trade-btn';button.textContent='＋ もう一つ工事を追加';button.onclick=App.openAdditionalTrade;head.insertBefore(button,head.querySelector('button'));
   }
+  function keepPaintOnStart(){
+    const grid=document.querySelector('#tradeGrid');if(!grid)return;
+    /* 初回は塗装だけ。ほかの工事は、見積作成後の「もう一つ工事を追加」から選ぶ。 */
+    grid.querySelectorAll('.trade:not(.custom-start-set)').forEach(button=>{
+      if(!String(button.getAttribute('onclick')||'').includes("'paint'"))button.remove();
+    });
+  }
+  const descriptionRules=[
+    [/足場仮設/, '外部作業用足場'],[/養生ネット/, '飛散防止養生'],[/高圧洗浄/, '汚れ・粉化物等の除去'],
+    [/ケレン・下地処理/, '錆・旧塗膜等の下地処理'],[/ハイポンファインプライマー/, '金属部防錆・密着性向上'],
+    [/ファインSi.*中塗り/, '上塗り1回目'],[/ファインSi.*仕上げ/, '上塗り2回目・仕上げ'],
+    [/パーフェクトトップ.*中塗り/, '上塗り1回目'],[/パーフェクトトップ.*仕上げ/, '上塗り2回目・仕上げ']
+  ];
+  const suggestedDescription=name=>(descriptionRules.find(([rule])=>rule.test(name||''))||[])[1]||'';
+  function fillEmptyDescriptions(){
+    let mastersChanged=false;
+    const masters=Catalog.masters().map(master=>{
+      const desc=master.desc||suggestedDescription(master.name);if(desc!==master.desc){mastersChanged=true;return {...master,desc}}return master;
+    });
+    if(mastersChanged)Catalog.saveMasters(masters);
+    const data=draft(),changed=[],legacyLinks=[];
+    const isPaint=/塗装/.test(data.customer?.constructionName||'')||(data.items||[]).some(item=>/パーフェクト|ファインSi|ハイポン|養生ネット/.test(item.name||''));
+    (data.items||[]).forEach((item,index)=>{
+      const desc=item.desc||suggestedDescription(item.name);if(desc&&desc!==item.desc)changed.push([index,desc]);
+      /* 以前の塗装ビルダーで作った㎡明細は、面積連動情報を持っていなかったため救済する。 */
+      if(isPaint&&!item.group&&item.unit==='㎡'&&/高圧洗浄|下塗り|中塗り|仕上げ|パーフェクト|ファインSi|ハイポン/.test(item.name||''))legacyLinks.push(index);
+    });
+    /* 既に作成中の明細にも、分かるものだけ概要を補う。判断できないものは空欄のまま。 */
+    changed.forEach(([index,desc])=>App.setItem(index,'desc',desc));
+    legacyLinks.forEach(index=>{App.setItem(index,'group','paintLegacyArea');App.setItem(index,'linked',true)});
+    if(mastersChanged||changed.length||legacyLinks.length)Sync.push().catch(()=>{});
+  }
   App.openAdditionalTrade=function(){
     const entries=[['sash','サッシ工事','標準セットを追加'],['bath','ユニットバス工事','標準セットを追加'],['concrete','コンクリ打設工事','施工面積と連動'],['paint','塗装工事','塗装ビルダーを開く'],['water','水回り工事','標準セットを追加']];
     const modal=document.querySelector('#modal');modal.innerHTML='<h2>もう一つ工事を追加</h2><p class="notice">今ある明細は残したまま、追加する工事だけを足します。</p><div class="additional-trades">'+entries.map(([id,name,note])=>'<button class="btn" onclick="App.addAdditionalTrade(\''+id+'\')"><b>'+name+'</b><small>'+note+'</small></button>').join('')+'</div><div class="modal-actions"><button class="btn" onclick="App.close()">閉じる</button></div>';document.querySelector('#modalBg').classList.add('open');
@@ -1099,10 +1132,10 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     App.addTemplate(template.id);
     setTimeout(()=>{addExtraButton();syncLinkedQuantities()},0);
   };
-  const observe=new MutationObserver(()=>{queueMicrotask(()=>{addExtraButton();syncLinkedQuantities()})});
-  function boot(){observe.observe(document.querySelector('#work'),{childList:true,subtree:true});addExtraButton();syncLinkedQuantities()}
+  const observe=new MutationObserver(()=>{queueMicrotask(()=>{addExtraButton();syncLinkedQuantities();keepPaintOnStart()})});
+  function boot(){observe.observe(document.querySelector('#work'),{childList:true,subtree:true});const grid=document.querySelector('#tradeGrid');if(grid)new MutationObserver(keepPaintOnStart).observe(grid,{childList:true});addExtraButton();syncLinkedQuantities();keepPaintOnStart()}
   ['chooseTrade','loadCase','newEstimate','paintBuilderAdd'].forEach(name=>{const base=App[name];if(!base)return;App[name]=function(){const result=base.apply(this,arguments);setTimeout(()=>{addExtraButton();syncLinkedQuantities()},0);return result}});
-  boot();window.addEventListener('load',boot,{once:true});
+  boot();window.addEventListener('load',()=>{boot();setTimeout(fillEmptyDescriptions,0)},{once:true});
 })();
 </script>
 <script>
