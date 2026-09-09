@@ -1215,7 +1215,8 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const templates=Catalog.templates(),masters=Catalog.masters();
     const selectedTemplate=templates[0]?.id||'';
     if(!categories.includes(selectedCategory))selectedCategory='その他';
-    const visible=masters.filter(master=>infer(master)===selectedCategory);
+    /* setOnly は工事一式の中身。左の単品候補には出さない。 */
+    const visible=masters.filter(master=>!master.setOnly&&infer(master)===selectedCategory);
     const sets=templates.map(template=>'<div class="warehouse-set" ondragover="App.warehouseAllowDrop(event)" ondragleave="this.classList.remove(\'drag-over\')" ondrop="App.warehouseDrop(event,\''+esc(template.id)+'\')"><button class="warehouse-set-add" onclick="App.addTemplate(\''+esc(template.id)+'\')"><strong>'+esc(template.name)+'</strong><small>'+(template.items||[]).length+'項目 · タップで見積へ追加</small></button><div class="warehouse-actions"><button class="btn sm" onclick="App.warehouseEditSet(\''+esc(template.id)+'\')">編集</button><button class="warehouse-delete" title="セットを削除" onclick="App.warehouseDeleteSet(\''+esc(template.id)+'\')">×</button></div></div>').join('')||'<div class="empty">セットがありません</div>';
     const cards=visible.map(master=>'<div class="warehouse-master" data-master-id="'+esc(master.id)+'" data-master-ready="1"><button class="warehouse-master-add" draggable="true" ondragstart="App.warehouseDragStart(event,\''+esc(master.id)+'\')" onclick="App.addMasterToEstimate(\''+esc(master.id)+'\')"><strong>'+esc(master.name)+'</strong>'+(master.desc?'<small>'+esc(master.desc)+'</small>':'')+'<small>'+esc(master.unit||'組')+' · ¥'+Number(master.price||0).toLocaleString()+'</small></button><div class="warehouse-actions"><button class="btn sm" onclick="App.warehouseAddToSet(\''+esc(master.id)+'\',\''+esc(selectedTemplate)+'\')">セット＋</button><button class="btn sm" onclick="App.warehouseEditMaster(\''+esc(master.id)+'\')">編集</button><button class="warehouse-delete" title="単品を削除" onclick="App.warehouseDeleteMaster(\''+esc(master.id)+'\')">×</button></div></div>').join('')||'<div class="empty">このカテゴリの単品はありません</div>';
     const modal=document.querySelector('#modal');modal.className='modal warehouse-modal';
@@ -1266,6 +1267,51 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   const openPaintBuilder=App.openPaintBuilder;
   App.openPaintBuilder=function(){applyWarehousePaintPrices();return openPaintBuilder.apply(this,arguments)};
   window.addEventListener('load',ensurePaintPriceSet,{once:true});
+})();
+</script>
+<script>
+/* セットの施工明細と、単品の追加オプションを分離する。単品削除でセットは壊さない。 */
+(function(){
+  const bathRecovery=[
+    {id:'photo_bath_clean',trade:'bath',name:'養生・清掃帯',desc:'写真見積の実例をもとにした初期項目',qty:1,unit:'組',price:50000,group:''},
+    {id:'photo_bath_demo',trade:'bath',name:'浴室内解体',desc:'既存浴室の解体・撤去',qty:1,unit:'組',price:215000,group:''},
+    {id:'photo_bath_disposal',trade:'bath',name:'廃材処分費',desc:'解体材の処分',qty:1,unit:'組',price:90000,group:''},
+    {id:'photo_bath_carpentry',trade:'bath',name:'周辺大工工事',desc:'下地・周辺補修を含む',qty:1,unit:'組',price:236000,group:''},
+    {id:'photo_bath_foundation',trade:'bath',name:'基礎土台補強工事',desc:'土台・補強',qty:1,unit:'組',price:155000,group:''},
+    {id:'photo_bath_adjust',trade:'bath',name:'据付調整工事',desc:'ユニットバス据付・調整',qty:1,unit:'組',price:198000,group:''},
+    {id:'photo_bath_plumbing',trade:'bath',name:'給排水配管工事',desc:'給排水接続を含む',qty:1,unit:'組',price:140000,group:''},
+    {id:'photo_bath_electric',trade:'bath',name:'電気設備工事',desc:'電気接続を含む',qty:1,unit:'組',price:65000,group:''},
+    {id:'photo_bath_unit',trade:'bath',name:'リクシル リデア M1616',desc:'ユニットバス本体',qty:1,unit:'組',price:589000,group:''}
+  ];
+  function protectSetItems(){
+    const masters=Catalog.masters(),templates=Catalog.templates();let changed=false;
+    /* 削除で空になった標準ユニットバスセットを、元の施工明細と単価で復元する。 */
+    const bath=templates.find(template=>template.id==='tpl_bath');
+    if(bath&&!Store.read('bathSetRecoveredV2',false)&&(!bath.items||bath.items.length<bathRecovery.length)){
+      bathRecovery.forEach(item=>{if(!masters.some(master=>master.id===item.id)){masters.push({...item,setOnly:true});changed=true}});
+      bath.items=bathRecovery.map(item=>item.id);changed=true;
+      Store.write('bathSetRecoveredV2',true);
+    }
+    const memberIds=new Set(templates.flatMap(template=>template.items||[]));
+    masters.forEach((master,index)=>{if(memberIds.has(master.id)&&!master.setOnly){masters[index]={...master,setOnly:true};changed=true}});
+    if(changed){Catalog.saveMasters(masters);Catalog.saveTemplates(templates);Sync.push().catch(()=>{})}
+  }
+  const baseOpenWarehouse=App.openWarehouse;
+  App.openWarehouse=function(){protectSetItems();return baseOpenWarehouse.apply(this,arguments)};
+  const baseAddToSet=App.warehouseAddToSet;
+  App.warehouseAddToSet=function(masterId,templateId){
+    const master=Catalog.masters().find(item=>item.id===masterId),templates=Catalog.templates(),template=templates.find(item=>item.id===templateId);if(!master||!template)return;
+    /* 追加オプションは複製してセットへ渡すので、左の単品候補は残る。 */
+    const copy={...master,id:Catalog.id('m'),setOnly:true};
+    const masters=Catalog.masters();masters.push(copy);template.items=(template.items||[]).concat(copy.id);Catalog.saveMasters(masters);Catalog.saveTemplates(templates);Sync.push().catch(()=>{});App.openWarehouse();
+  };
+  const baseDeleteMaster=App.warehouseDeleteMaster;
+  App.warehouseDeleteMaster=function(id){
+    /* セット専用の施工明細は単品一覧に出さない。万一呼ばれても削除しない。 */
+    if(Catalog.templates().some(template=>(template.items||[]).includes(id)))return;
+    return baseDeleteMaster.apply(this,arguments);
+  };
+  window.addEventListener('load',protectSetItems,{once:true});
 })();
 </script>
 <script>App.start();</script>
