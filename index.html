@@ -994,15 +994,14 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   function itemsFromBuilder(){
     const paintGroups={scaffold:'paintScaffold',wall:'paintWall',roof:'paintRoof',barge:'paintBarge',eaves:'paintEaves',gutter:'paintGutter',awning:'paintAwning',flashing:'paintFlashing',shutter:'paintShutter',other:'paintOther'};
     const result=[],add=(entries,prefix='')=>entries.forEach(entry=>{const q=entry.quantity==='one'?1:Number(state.quantities[entry.quantity]||0),group=paintGroups[entry.quantity]||'';result.push({name:prefix?prefix+'｜'+entry.name:entry.name,desc:entry.desc,qty:q,unit:entry.unit,price:entry.price,group,linked:!!group})});
+    const addSurface=(steps,bio,quantity)=>{if(!steps?.length)return;add(steps.slice(0,1));if(bio)add([step('バイオ殺菌洗浄','苔・藻・カビ等の殺菌処理',PAINT_PRICES.bio,'㎡',quantity)]);add(steps.slice(1))};
     if(state.scaffold)add(PAINT_SPECS.scaffold);
-    if(state.wall==='mortar')add(PAINT_SPECS.walls.mortar[state.mortar]);
-    else if(state.wall==='siding')add(PAINT_SPECS.walls.siding);
-    else if(['galvanized','tin'].includes(state.wall))add(PAINT_SPECS.walls.metal);
-    else if(state.wall==='wood')add(PAINT_SPECS.walls.wood);
-    if(state.bioWall&&state.wall!=='none')add([step('バイオ殺菌洗浄','苔・藻・カビ等の殺菌処理',PAINT_PRICES.bio,'㎡','wall')]);
-    if(state.roof==='colonial')add(PAINT_SPECS.roofs.colonial);
-    else if(['tin','galvanized'].includes(state.roof))add(PAINT_SPECS.roofs.metal);
-    if(state.bioRoof&&state.roof!=='none')add([step('バイオ殺菌洗浄','苔・藻・カビ等の殺菌処理',PAINT_PRICES.bio,'㎡','roof')]);
+    if(state.wall==='mortar')addSurface(PAINT_SPECS.walls.mortar[state.mortar],state.bioWall,'wall');
+    else if(state.wall==='siding')addSurface(PAINT_SPECS.walls.siding,state.bioWall,'wall');
+    else if(['galvanized','tin'].includes(state.wall))addSurface(PAINT_SPECS.walls.metal,state.bioWall,'wall');
+    else if(state.wall==='wood')addSurface(PAINT_SPECS.walls.wood,state.bioWall,'wall');
+    if(state.roof==='colonial')addSurface(PAINT_SPECS.roofs.colonial,state.bioRoof,'roof');
+    else if(['tin','galvanized'].includes(state.roof))addSurface(PAINT_SPECS.roofs.metal,state.bioRoof,'roof');
     if(state.taspe&&state.roof==='colonial')add([step('縁切り／タスペーサー','屋根材重なり部の排水経路確保',PAINT_PRICES.taspe,'㎡','roof')]);
     selectedAccessories().forEach(key=>add(PAINT_SPECS.accessories[key].steps,PAINT_SPECS.accessories[key].label));
     if(state.accessories.other)add([step(state.otherName||'その他','その他塗装工事',0,'組','other')]);
@@ -1232,6 +1231,41 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   App.warehouseEditMaster=function(id){priorEditMaster(id);const editor=document.querySelector('.warehouse-master[data-master-id="'+id+'"] .warehouse-master-editor');if(!editor)return;const master=Catalog.masters().find(item=>item.id===id);const category=document.createElement('select');category.className='master-category';category.innerHTML=optionList(infer(master));category.onchange=()=>{const masters=Catalog.masters(),index=masters.findIndex(item=>item.id===id);if(index>=0){masters[index]={...masters[index],warehouseCategory:category.value};Catalog.saveMasters(masters);Sync.push().catch(()=>{})}};editor.append(category)};
   /* 既存の追加・削除・ドラッグ・セット編集関数はそのまま利用する。 */
   window.addEventListener('load',seedCategories,{once:true});
+})();
+</script>
+<script>
+/* 塗装ビルダーの基本単価は、倉庫の「塗装｜基本単価」セットで一元編集する。 */
+(function(){
+  const priceRows=[
+    ['scaffold','足場仮設組','外部作業用足場','㎡',1000],['net','養生ネット張り','飛散防止養生','㎡',200],['wash','高圧洗浄','汚れ・粉化物等の除去','㎡',300],
+    ['prep','下地処理・ケレン','ひび割れ・錆等の下地調整','組',65000],['filler','パーフェクトフィラー／サーフ','下地調整・密着性向上','㎡',700],['sealer','下塗りシーラー','下地補強・吸込み抑制','㎡',650],
+    ['top','上塗り（パーフェクトトップ／ファインSi）','上塗り1回目・2回目','㎡',900],['metalPrimer','ハイポンファインプライマーII','金属部防錆・密着性向上','㎡',750],['woodPrimer','木部下塗り','木部下地調整・密着性向上','㎡',700],
+    ['eaves','軒天塗装','軒天仕上げ塗装','㎡',900],['accessoryPrep','付帯部ケレン・下地処理','付帯部の下地調整','m',1200],['accessoryPrimer','付帯部下塗り','素材に応じた下塗り処理','m',750],
+    ['taspe','縁切り／タスペーサー','屋根材重なり部の排水経路確保','㎡',500],['bio','バイオ殺菌洗浄','苔・藻・カビ等の殺菌処理','㎡',450]
+  ];
+  const priceMap={
+    '足場仮設組':'scaffold','養生ネット張り':'net','高圧洗浄':'wash','バイオ殺菌洗浄':'bio','縁切り／タスペーサー':'taspe',
+    '下塗りシーラー':'sealer','木部下塗り':'woodPrimer','軒天塗装 1回目':'eaves','軒天塗装 2回目':'eaves','必要な下塗り':'accessoryPrimer',
+    '下塗り　ハイポンファインプライマーII':'metalPrimer','ハイポンファインプライマーII':'metalPrimer','下塗り　パーフェクトフィラー':'filler','下塗り　パーフェクトサーフ':'filler',
+    '中塗り　パーフェクトトップ':'top','仕上げ　パーフェクトトップ':'top','中塗り　ファインパーフェクトベスト':'top','仕上げ　ファインパーフェクトベスト':'top','中塗り　ファインSi':'top','仕上げ　ファインSi':'top','ファインSi 中塗り':'top','ファインSi 仕上げ':'top'
+  };
+  function ensurePaintPriceSet(){
+    let changed=false;const masters=Catalog.masters(),byKey=new Map(masters.filter(master=>master.paintPriceKey).map(master=>[master.paintPriceKey,master]));
+    priceRows.forEach(([paintPriceKey,name,desc,unit,price])=>{if(byKey.has(paintPriceKey))return;const master={id:Catalog.id('m'),trade:'paint',warehouseCategory:'その他',paintPriceKey,name,desc,qty:1,unit,price,group:''};masters.push(master);byKey.set(paintPriceKey,master);changed=true});
+    const templates=Catalog.templates(),id='paint-price-settings',index=templates.findIndex(template=>template.id===id),items=priceRows.map(([key])=>byKey.get(key).id);
+    const template={id,trade:'paint',name:'塗装｜基本単価（ビルダー用）',items};
+    if(index<0){templates.unshift(template);changed=true}else if(JSON.stringify(templates[index].items)!==JSON.stringify(items)){templates[index]={...templates[index],...template};changed=true}
+    if(changed){Catalog.saveMasters(masters);Catalog.saveTemplates(templates);Sync.push().catch(()=>{})}
+  }
+  function applyWarehousePaintPrices(){
+    ensurePaintPriceSet();
+    const prices=new Map(Catalog.masters().filter(master=>master.paintPriceKey).map(master=>[master.paintPriceKey,Number(master.price)||0]));
+    const walk=value=>{if(Array.isArray(value))return value.forEach(walk);if(!value||typeof value!=='object')return;let key=priceMap[value.name];if((value.name==='下地処理'||value.name==='ケレン・下地処理'))key=value.unit==='組'?'prep':'accessoryPrep';if(key)value.price=prices.get(key)??value.price;Object.values(value).forEach(walk)};
+    walk(window.PAINT_SPECS);
+  }
+  const openPaintBuilder=App.openPaintBuilder;
+  App.openPaintBuilder=function(){applyWarehousePaintPrices();return openPaintBuilder.apply(this,arguments)};
+  window.addEventListener('load',ensurePaintPriceSet,{once:true});
 })();
 </script>
 <script>App.start();</script>
