@@ -1198,12 +1198,11 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   };
   function seedCategories(){
     let changed=false,masters=Catalog.masters().map(master=>{const warehouseCategory=infer(master);if(master.warehouseCategory===warehouseCategory)return master;changed=true;return {...master,warehouseCategory}});
-    if(!Store.read('warehouseCategorySeedV1',false)){
-      Object.entries(candidates).forEach(([warehouseCategory,names])=>names.forEach(name=>{
-        if(!masters.some(master=>master.warehouseCategory===warehouseCategory&&master.name===name)){masters.push({id:Catalog.id('m'),trade:'other',warehouseCategory,name,desc:'',qty:1,unit:'組',price:0,group:''});changed=true}
-      }));
-      Store.write('warehouseCategorySeedV1',true);
-    }
+    /* 初期候補は、過去の誤った非表示・削除からも安全に復元できるよう毎回不足分だけ補う。 */
+    Object.entries(candidates).forEach(([warehouseCategory,names])=>names.forEach(name=>{
+      if(!masters.some(master=>master.warehouseCategory===warehouseCategory&&master.name===name)){masters.push({id:Catalog.id('m'),trade:'other',warehouseCategory,name,desc:'',qty:1,unit:'組',price:0,group:''});changed=true}
+    }));
+    Store.write('warehouseCategorySeedV1',true);
     if(changed){Catalog.saveMasters(masters);Sync.push().catch(()=>{})}
   }
   const priorAddMaster=App.addMasterToEstimate;
@@ -1307,8 +1306,13 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
       bath.items=bathRecovery.map(item=>item.id);changed=true;
       Store.write('bathSetRecoveredV3',true);
     }
-    const memberIds=new Set(templates.flatMap(template=>template.items||[]));
-    masters.forEach((master,index)=>{if(memberIds.has(master.id)&&!master.setOnly){masters[index]={...master,setOnly:true};changed=true}});
+    /* 旧版が誤って隠したカテゴリ単品を戻す。塗装の設定行と今回生成したセット行は除外する。 */
+    masters.forEach((master,index)=>{if(master.setOnly&&master.warehouseCategory&&!master.paintPriceKey&&!String(master.id||'').startsWith('setrow_')){masters[index]={...master,setOnly:false};changed=true}});
+    /*
+      旧形式では単品とセットが同じIDを共有していた。
+      ここで全セット構成員を setOnly 化すると、単品候補まで倉庫から消える。
+      現在は template.snapshotItems がセット本体なので、既存単品へは一切触れない。
+    */
     if(changed){Catalog.saveMasters(masters);Catalog.saveTemplates(templates);Sync.push().catch(()=>{})}
   }
   const baseOpenWarehouse=App.openWarehouse;
@@ -1322,9 +1326,19 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   };
   const baseDeleteMaster=App.warehouseDeleteMaster;
   App.warehouseDeleteMaster=function(id){
-    /* セット専用の施工明細は単品一覧に出さない。万一呼ばれても削除しない。 */
-    if(Catalog.templates().some(template=>(template.items||[]).includes(id)))return;
-    return baseDeleteMaster.apply(this,arguments);
+    /* 単品削除は単品だけ。セットは snapshotItems を持つため参照解除も不要。 */
+    if(!Catalog.masters().some(master=>master.id===id))return;
+    Catalog.saveMasters(Catalog.masters().filter(master=>master.id!==id));
+    Sync.push().catch(()=>{});
+    App.openWarehouse();
+  };
+  /* 削除対象はそのセットだけ。単品・別セット・表示順には一切作用させない。 */
+  App.warehouseDeleteSet=function(id){
+    const templates=Catalog.templates();
+    if(!templates.some(template=>template.id===id))return;
+    Catalog.saveTemplates(templates.filter(template=>template.id!==id));
+    Sync.push().catch(()=>{});
+    App.openWarehouse();
   };
   window.addEventListener('load',protectSetItems,{once:true});
 })();
