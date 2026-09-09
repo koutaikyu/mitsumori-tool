@@ -1109,12 +1109,16 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const isPaint=/塗装/.test(data.customer?.constructionName||'')||(data.items||[]).some(item=>/パーフェクト|ファインSi|ハイポン|養生ネット/.test(item.name||''));
     (data.items||[]).forEach((item,index)=>{
       const desc=item.desc||suggestedDescription(item.name);if(desc&&desc!==item.desc)changed.push([index,desc]);
-      /* 以前の塗装ビルダーで作った㎡明細は、面積連動情報を持っていなかったため救済する。 */
-      if(isPaint&&!item.group&&item.unit==='㎡'&&/高圧洗浄|下塗り|中塗り|仕上げ|パーフェクト|ファインSi|ハイポン/.test(item.name||''))legacyLinks.push(index);
+      /* 以前の塗装ビルダーで作った明細は、数量連動情報を持っていなかったため品名から救済する。 */
+      if(isPaint&&!item.group){
+        if(/足場仮設|養生ネット/.test(item.name||''))legacyLinks.push([index,'paintScaffold']);
+        else if(/雨樋/.test(item.name||''))legacyLinks.push([index,'paintGutter']);
+        else if(item.unit==='㎡'&&/高圧洗浄|下塗り|中塗り|仕上げ|パーフェクト|ファインSi|ハイポン/.test(item.name||''))legacyLinks.push([index,'paintLegacyArea']);
+      }
     });
     /* 既に作成中の明細にも、分かるものだけ概要を補う。判断できないものは空欄のまま。 */
     changed.forEach(([index,desc])=>App.setItem(index,'desc',desc));
-    legacyLinks.forEach(index=>{App.setItem(index,'group','paintLegacyArea');App.setItem(index,'linked',true)});
+    legacyLinks.forEach(([index,group])=>{App.setItem(index,'group',group);App.setItem(index,'linked',true)});
     if(mastersChanged||changed.length||legacyLinks.length)Sync.push().catch(()=>{});
   }
   App.openAdditionalTrade=function(){
