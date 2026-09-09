@@ -1105,5 +1105,23 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   boot();window.addEventListener('load',boot,{once:true});
 })();
 </script>
+<script>
+/*
+  倉庫の編集内容は端末へ即保存済みなのに、起動直後の自動Sheets読込が
+  同じIDの古い行で上書きしてしまうことがあった。
+  起動時はローカルを正とし、Sheetsを読む操作は「管理 → Google Sheets 同期」だけにする。
+  編集時のSync.push（Sheetsへの反映）は従来どおり動く。
+*/
+(function(){
+  const startWithAutoPull=App.start;
+  App.start=function(){
+    const settings=Store.read('settings',{});
+    if(!settings.appsScriptUrl)return startWithAutoPull.apply(this,arguments);
+    /* 元のstart()が実行する自動pullだけを一時的に止める。 */
+    Store.write('settings',{...settings,appsScriptUrl:''});
+    try{return startWithAutoPull.apply(this,arguments)}finally{Store.write('settings',settings)}
+  };
+})();
+</script>
 <script>App.start();</script>
 </body></html>
