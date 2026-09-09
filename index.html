@@ -778,7 +778,9 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
       if(!masterId||!masterIndex.has(masterId)){
         masterId=Catalog.id('m');element.dataset.masterId=masterId;masterIndex.set(masterId,masters.length);masters.push({id:masterId});
       }
-      const master={id:masterId,trade,name:itemName,desc:element.querySelector('.desc').value.trim(),qty:+element.querySelector('.qty').value||0,unit:element.querySelector('.unit').value,price:+element.querySelector('.price').value||0,group:element.querySelector('.group').value};
+      /* セット編集で塗装単価キー・カテゴリ等の内部情報を消さない。 */
+      const previousMaster=masters[masterIndex.get(masterId)]||{};
+      const master={...previousMaster,id:masterId,trade,name:itemName,desc:element.querySelector('.desc').value.trim(),qty:+element.querySelector('.qty').value||0,unit:element.querySelector('.unit').value,price:+element.querySelector('.price').value||0,group:element.querySelector('.group').value};
       masters[masterIndex.get(masterId)]=master;items.push(master);
     });
     if(!items.length){state('品名を入力すると保存されます');return false}
@@ -786,7 +788,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const templates=Catalog.templates();
     const at=templates.findIndex(template=>template.id===id);
     const previous=at>=0?templates[at]:{};
-    const template={...previous,id,name,trade,items:items.map(item=>item.id),startTile:!!editor.querySelector('#stableStartSet').checked};
+    const template={...previous,id,name,trade,items:items.map(item=>item.id),snapshotItems:items.map(item=>({snapshotId:Catalog.id('si'),sourceMasterId:item.id,name:item.name,desc:item.desc,qty:item.qty,unit:item.unit,price:item.price,group:item.group||''})),startTile:!!editor.querySelector('#stableStartSet').checked};
     if(at>=0)templates[at]=template;else templates.push(template);
     Catalog.saveTemplates(templates);
     collapseExactDuplicates();
@@ -801,7 +803,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const templateId=current?.id||Catalog.id('t');
     const base=current||{id:templateId,name:'新しいセット',trade:'other',items:[],startTile:false};
     const masters=Catalog.masters();
-    const rows=(base.items||[]).map(masterId=>masters.find(master=>master.id===masterId)).filter(Boolean);
+    const rows=(base.snapshotItems?.length?base.snapshotItems:(base.items||[]).map(masterId=>masters.find(master=>master.id===masterId))).filter(Boolean);
     const selectedTrade=String(base.trade||'').startsWith('start:')?'other':base.trade||'other';
     const tradeOptions=[['sash','サッシ工事'],['bath','ユニットバス工事'],['concrete','コンクリ打設工事'],['paint','塗装工事'],['water','水回り工事'],['other','その他']].map(([value,label])=>'<option value="'+value+'"'+(value===selectedTrade?' selected':'')+'>'+label+'</option>').join('');
     const modal=document.querySelector('#modal');modal.className='modal';
@@ -1251,17 +1253,20 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     '中塗り　パーフェクトトップ':'top','仕上げ　パーフェクトトップ':'top','中塗り　ファインパーフェクトベスト':'top','仕上げ　ファインパーフェクトベスト':'top','中塗り　ファインSi':'top','仕上げ　ファインSi':'top','ファインSi 中塗り':'top','ファインSi 仕上げ':'top'
   };
   function ensurePaintPriceSet(){
-    let changed=false;const masters=Catalog.masters(),byKey=new Map(masters.filter(master=>master.paintPriceKey).map(master=>[master.paintPriceKey,master]));
-    priceRows.forEach(([paintPriceKey,name,desc,unit,price,group])=>{const current=byKey.get(paintPriceKey);if(current){if(current.group!==group){Object.assign(current,{group});changed=true}return}const master={id:Catalog.id('m'),trade:'paint',warehouseCategory:'その他',paintPriceKey,name,desc,qty:1,unit,price,group};masters.push(master);byKey.set(paintPriceKey,master);changed=true});
-    const templates=Catalog.templates(),id='paint-price-settings',index=templates.findIndex(template=>template.id===id),items=priceRows.map(([key])=>byKey.get(key).id);
+    let changed=false;const masters=Catalog.masters(),templates=Catalog.templates(),id='paint-price-settings',index=templates.findIndex(template=>template.id===id),previousTemplate=index>=0?templates[index]:null;
+    const byId=new Map(masters.map(master=>[master.id,master])),byKey=new Map(masters.filter(master=>master.paintPriceKey).map(master=>[master.paintPriceKey,master]));
+    /* 旧保存処理でキーを失った既存の塗装単価行は、セットの行順から復旧する。単価は絶対に初期値へ戻さない。 */
+    (previousTemplate?.items||[]).forEach((masterId,rowIndex)=>{const master=byId.get(masterId),row=priceRows[rowIndex];if(!master||!row||master.paintPriceKey)return;master.paintPriceKey=row[0];if(!master.warehouseCategory)master.warehouseCategory='その他';if(master.group!==row[5])master.group=row[5];byKey.set(row[0],master);changed=true});
+    priceRows.forEach(([paintPriceKey,name,desc,unit,price,group])=>{const current=byKey.get(paintPriceKey);if(current){if(!current.warehouseCategory){current.warehouseCategory='その他';changed=true}if(current.group!==group){current.group=group;changed=true}return}const master={id:Catalog.id('m'),trade:'paint',warehouseCategory:'その他',paintPriceKey,name,desc,qty:1,unit,price,group};masters.push(master);byKey.set(paintPriceKey,master);changed=true});
+    const items=priceRows.map(([key])=>byKey.get(key).id);
     const template={id,trade:'paint',name:'塗装｜基本単価（ビルダー用）',items};
     if(index<0){templates.unshift(template);changed=true}else if(JSON.stringify(templates[index].items)!==JSON.stringify(items)){templates[index]={...templates[index],...template};changed=true}
     if(changed){Catalog.saveMasters(masters);Catalog.saveTemplates(templates);Sync.push().catch(()=>{})}
   }
   function applyWarehousePaintPrices(){
     ensurePaintPriceSet();
-    const prices=new Map(Catalog.masters().filter(master=>master.paintPriceKey).map(master=>[master.paintPriceKey,Number(master.price)||0]));
-    const walk=value=>{if(Array.isArray(value))return value.forEach(walk);if(!value||typeof value!=='object')return;let key=priceMap[value.name];if((value.name==='下地処理'||value.name==='ケレン・下地処理'))key=value.unit==='組'?'prep':'accessoryPrep';if(key)value.price=prices.get(key)??value.price;Object.values(value).forEach(walk)};
+    const specs=new Map(Catalog.masters().filter(master=>master.paintPriceKey).map(master=>[master.paintPriceKey,master]));
+    const walk=value=>{if(Array.isArray(value))return value.forEach(walk);if(!value||typeof value!=='object')return;let key=value.__paintSpecKey||priceMap[value.name];if((value.name==='下地処理'||value.name==='ケレン・下地処理'))key=value.unit==='組'?'prep':'accessoryPrep';if(key){try{Object.defineProperty(value,'__paintSpecKey',{value:key,writable:true,configurable:true,enumerable:false})}catch(_){value.__paintSpecKey=key}const spec=specs.get(key);if(spec){value.name=spec.name||value.name;value.desc=spec.desc||value.desc;value.unit=spec.unit||value.unit;value.price=Number(spec.price)||0}}Object.keys(value).forEach(name=>{if(name!=='__paintSpecKey')walk(value[name])})};
     walk(window.PAINT_SPECS);
   }
   const openPaintBuilder=App.openPaintBuilder;
@@ -1322,6 +1327,76 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     return baseDeleteMaster.apply(this,arguments);
   };
   window.addEventListener('load',protectSetItems,{once:true});
+})();
+</script>
+<script>
+/*
+  データ責務の境界
+  - masters: 単品候補だけ
+  - templates.snapshotItems: セット作成時点の独立した施工明細
+  - paintSpecs: 塗装ビルダー専用の標準仕様
+  - cases / draft: 実案件（標準を後から変更しても不変）
+*/
+(function(){
+  const deep=value=>JSON.parse(JSON.stringify(value));
+  Store.keys.paintSpecs='paintSpecs';
+  Store.keys.dataSchema='dataSchema';
+  const snapshot=(master,templateId,index)=>({snapshotId:'si_'+templateId+'_'+index+'_'+Catalog.id('x'),sourceMasterId:master.id||'',name:master.name||'',desc:master.desc||'',qty:Number(master.qty)||0,unit:master.unit||'式',price:Number(master.price)||0,group:master.group||''});
+  const validRows=rows=>Array.isArray(rows)&&rows.some(row=>row&&row.name);
+  const originalTemplates=Catalog.templates,originalSaveTemplates=Catalog.saveTemplates,originalSaveMasters=Catalog.saveMasters;
+  function normalizeTemplates(list,previous){
+    const masters=new Map(Catalog.masters().map(master=>[master.id,master]));
+    const before=new Map((previous||[]).map(template=>[template.id,template]));
+    return (Array.isArray(list)?list:[]).map(template=>{
+      const old=before.get(template.id)||{};
+      let rows=validRows(template.snapshotItems)?template.snapshotItems:validRows(old.snapshotItems)?old.snapshotItems:(template.items||[]).map(id=>masters.get(id)).filter(Boolean).map((master,index)=>snapshot(master,template.id,index));
+      rows=(rows||[]).filter(Boolean).map((row,index)=>({snapshotId:row.snapshotId||('si_'+template.id+'_'+index+'_'+Catalog.id('x')),sourceMasterId:row.sourceMasterId||row.id||'',name:row.name||'',desc:row.desc||'',qty:Number(row.qty)||0,unit:row.unit||'式',price:Number(row.price)||0,group:row.group||''}));
+      return {...template,items:Array.isArray(template.items)?template.items.slice():rows.map(row=>row.sourceMasterId).filter(Boolean),snapshotItems:rows};
+    });
+  }
+  function paintFromMasters(masters){
+    const current=Store.read(Store.keys.paintSpecs,[]),byKey=new Map(current.map(spec=>[spec.key,spec]));let changed=false;
+    (masters||[]).filter(master=>master.paintPriceKey).forEach(master=>{const key=master.paintPriceKey,next={id:'paint_'+key,key,name:master.name||'',desc:master.desc||'',unit:master.unit||'式',price:Number(master.price)||0,group:master.group||''},old=byKey.get(key);if(!old||JSON.stringify(old)!==JSON.stringify(next)){byKey.set(key,next);changed=true}});
+    if(changed)Store.write(Store.keys.paintSpecs,[...byKey.values()]);
+    return [...byKey.values()];
+  }
+  Catalog.saveTemplates=function(list){return originalSaveTemplates(normalizeTemplates(list,originalTemplates()))};
+  Catalog.saveMasters=function(list){const result=originalSaveMasters(list);paintFromMasters(list);return result};
+  function migrate(){
+    const templates=originalTemplates(),normalized=normalizeTemplates(templates,templates);
+    if(JSON.stringify(templates)!==JSON.stringify(normalized))originalSaveTemplates(normalized);
+    paintFromMasters(Catalog.masters());
+    if(!Store.read(Store.keys.dataSchema,null))Store.write(Store.keys.dataSchema,{version:2,migratedAt:new Date().toISOString()});
+  }
+  function paintSpecs(){return Store.read(Store.keys.paintSpecs,[])}
+  function applyPaintSpecs(){
+    const specs=new Map(paintSpecs().map(spec=>[spec.key,spec]));
+    const map={
+      '足場仮設組':'scaffold','養生ネット張り':'net','高圧洗浄':'wash','バイオ殺菌洗浄':'bio','縁切り／タスペーサー':'taspe','下塗りシーラー':'sealer','木部下塗り':'woodPrimer','軒天塗装 1回目':'eaves','軒天塗装 2回目':'eaves','必要な下塗り':'accessoryPrimer','下塗り　ハイポンファインプライマーII':'metalPrimer','ハイポンファインプライマーII':'metalPrimer','下塗り　パーフェクトフィラー':'filler','下塗り　パーフェクトサーフ':'filler','中塗り　パーフェクトトップ':'top','仕上げ　パーフェクトトップ':'top','中塗り　ファインパーフェクトベスト':'top','仕上げ　ファインパーフェクトベスト':'top','中塗り　ファインSi':'top','仕上げ　ファインSi':'top','ファインSi 中塗り':'top','ファインSi 仕上げ':'top'
+    };
+    const visit=value=>{if(Array.isArray(value)){value.forEach(visit);return}if(!value||typeof value!=='object')return;let key=value.__paintSpecKey||map[value.name];if((value.name==='下地処理'||value.name==='ケレン・下地処理'))key=value.unit==='組'?'prep':'accessoryPrep';if(key){try{Object.defineProperty(value,'__paintSpecKey',{value:key,writable:true,configurable:true,enumerable:false})}catch(_){value.__paintSpecKey=key}const spec=specs.get(key);if(spec){value.name=spec.name||value.name;value.desc=spec.desc||value.desc;value.unit=spec.unit||value.unit;value.price=Number(spec.price)||0}}Object.keys(value).forEach(name=>{if(name!=='__paintSpecKey')visit(value[name])})};
+    visit(window.PAINT_SPECS);
+  }
+  /* セットは常に自身のスナップショットから案件へ展開する。単品を削除しても参照しない。 */
+  const addTemplate=App.addTemplate;
+  App.addTemplate=function(id){
+    migrate();const templates=Catalog.templates(),template=templates.find(item=>item.id===id);
+    if(!template||!validRows(template.snapshotItems))return addTemplate.apply(this,arguments);
+    const masters=Catalog.masters(),tempId='snapshot_'+Catalog.id('t'),ids=[];
+    template.snapshotItems.forEach((row,index)=>{const masterId='setrow_'+template.id+'_'+row.snapshotId;let master=masters.find(item=>item.id===masterId);if(!master){master={id:masterId,trade:template.trade||'other',name:row.name,desc:row.desc,qty:row.qty,unit:row.unit,price:row.price,group:row.group||'',setOnly:true};masters.push(master)}ids.push(masterId)});
+    Catalog.saveMasters(masters);Catalog.saveTemplates(templates.concat([{id:tempId,trade:template.trade||'other',name:template.name,items:ids,snapshotItems:deep(template.snapshotItems)}]));
+    try{return addTemplate.call(this,tempId)}finally{Catalog.saveTemplates(Catalog.templates().filter(item=>item.id!==tempId))}
+  };
+  /* Sheets はデータ種別ごとに別フィールド・別シートで送受信する。 */
+  let traffic=Promise.resolve();
+  const request=async(action,data)=>{const url=Store.read('settings',{}).appsScriptUrl;if(!url)throw Error('Apps Script URL未設定');const response=await fetch(url,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action,data})});const json=await response.json();if(!json.ok)throw Error(json.error||'同期失敗');return json.data};
+  const acceptRemote=data=>{if(!data)return;if(Array.isArray(data.masters))originalSaveMasters(data.masters);if(Array.isArray(data.templates))Catalog.saveTemplates(data.templates);if(Array.isArray(data.paintSpecs))Store.write(Store.keys.paintSpecs,data.paintSpecs);migrate();applyPaintSpecs()};
+  Sync.push=function(){return traffic=traffic.catch(()=>{}).then(async()=>{migrate();const data=await request('pushMasters',{masters:Catalog.masters(),templates:Catalog.templates(),paintSpecs:paintSpecs()});acceptRemote(data);return data})};
+  Sync.pull=function(){return traffic=traffic.catch(()=>{}).then(async()=>{const data=await request('pullMasters',{});acceptRemote(data);return data})};
+  const start=App.start;
+  App.start=function(){migrate();applyPaintSpecs();return start.apply(this,arguments)};
+  const openPaintBuilder=App.openPaintBuilder;
+  App.openPaintBuilder=function(){migrate();applyPaintSpecs();return openPaintBuilder.apply(this,arguments)};
 })();
 </script>
 <script>App.start();</script>
