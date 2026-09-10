@@ -36,9 +36,10 @@ const App=(()=>{let e;const trades={sash:['サッシ工事','箇所数'],bath:['
 </script>
 <script>
 /* Google同期の設定画面。通信不能でもローカルの作業・保存は継続する。 */
-App.openSync=function(){const url=Store.read('settings',{}).appsScriptUrl||'';document.querySelector('#modal').innerHTML=`<h2>共有マスター同期</h2><div class="field"><label>Apps Script WebアプリURL</label><input id="syncUrl" value="${url.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="https://script.google.com/macros/s/.../exec"></div><p class="notice">未設定でも、この端末では見積作成を続けられます。</p><div class="modal-actions"><button class="btn" onclick="App.pullSync()">Googleから読込</button><button class="btn primary" onclick="App.saveSync()">URLを保存して送信</button></div>`;document.querySelector('#modalBg').classList.add('open')};
-App.saveSync=async function(){Store.write('settings',{appsScriptUrl:document.querySelector('#syncUrl').value.trim()});try{await Sync.push();alert('共有マスターへ送信しました');App.close()}catch(err){alert('URLは保存しました。送信は未完了です。'+err.message)}};
-App.pullSync=async function(){try{await Sync.pull();App.close();location.reload()}catch(err){alert('読込できません。'+err.message)}};
+App.openSync=function(){const url=Store.read('settings',{}).appsScriptUrl||'';document.querySelector('#modal').innerHTML=`<h2>共有マスター同期</h2><div class="field"><label>Apps Script WebアプリURL</label><input id="syncUrl" value="${url.replace(/&/g,'&amp;').replace(/"/g,'&quot;')}" placeholder="https://script.google.com/macros/s/.../exec"></div><p id="syncStatus" class="notice" role="status">送信または読込を選択してください。</p><div class="modal-actions"><button class="btn" data-sync-action onclick="App.pullSync()">Googleから読込</button><button class="btn primary" data-sync-action onclick="App.saveSync()">URLを保存して送信</button></div>`;document.querySelector('#modalBg').classList.add('open')};
+App.syncStatus=function(text,busy){const node=document.querySelector('#syncStatus');if(node)node.textContent=text;document.querySelectorAll('[data-sync-action]').forEach(button=>button.disabled=!!busy)};
+App.saveSync=async function(){const input=document.querySelector('#syncUrl');if(!input)return;Store.write('settings',{appsScriptUrl:input.value.trim()});App.syncStatus('共有マスターへ送信中…',true);try{await Sync.push();App.syncStatus('送信完了しました。',false)}catch(err){App.syncStatus('送信できませんでした：'+err.message,false)}};
+App.pullSync=async function(){App.syncStatus('Googleから読込中…',true);try{await Sync.pull();App.syncStatus('読込完了。画面を更新しています…',true);location.reload()}catch(err){App.syncStatus('読込できませんでした：'+err.message,false)}};
 </script>
 <style>.edit-row{grid-template-columns:26px 1.3fr 1fr 52px 52px 70px 90px 26px 26px}@media(max-width:760px){.edit-row{grid-template-columns:24px 1fr 45px 45px 62px 24px 24px}.edit-row .desc,.edit-row .group{display:none}}</style>
 <script>
