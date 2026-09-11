@@ -1212,7 +1212,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const selectedTemplate=templates[0]?.id||'';
     if(!categories.includes(selectedCategory))selectedCategory='その他';
     const visible=masters.filter(master=>infer(master)===selectedCategory);
-    const sets=templates.map(template=>'<div class="warehouse-set" ondragover="App.warehouseAllowDrop(event)" ondragleave="this.classList.remove(\'drag-over\')" ondrop="App.warehouseDrop(event,\''+esc(template.id)+'\')"><button class="warehouse-set-add" onclick="App.addTemplate(\''+esc(template.id)+'\')"><strong>'+esc(template.name)+'</strong><small>'+(template.snapshotItems?.length??template.items?.length??0)+'項目 · タップで見積へ追加</small></button><div class="warehouse-actions"><button class="btn sm" onclick="App.warehouseEditSet(\''+esc(template.id)+'\')">編集</button><button class="warehouse-delete" title="セットを削除" onclick="App.warehouseDeleteSet(\''+esc(template.id)+'\')">×</button></div></div>').join('')||'<div class="empty">セットがありません</div>';
+    const sets=templates.map(template=>'<div class="warehouse-set" ondragover="App.warehouseAllowDrop(event)" ondragleave="this.classList.remove(\'drag-over\')" ondrop="App.warehouseDrop(event,\''+esc(template.id)+'\')"><button class="warehouse-set-add" onclick="App.addTemplate(\''+esc(template.id)+'\')"><strong>'+esc(template.name)+'</strong><small>'+(template.snapshotItems?.length||template.items?.length||0)+'項目 · タップで見積へ追加</small></button><div class="warehouse-actions"><button class="btn sm" onclick="App.warehouseEditSet(\''+esc(template.id)+'\')">編集</button><button class="warehouse-delete" title="セットを削除" onclick="App.warehouseDeleteSet(\''+esc(template.id)+'\')">×</button></div></div>').join('')||'<div class="empty">セットがありません</div>';
     const cards=visible.map(master=>'<div class="warehouse-master" data-master-id="'+esc(master.id)+'" data-master-ready="1"><button class="warehouse-master-add" draggable="true" ondragstart="App.warehouseDragStart(event,\''+esc(master.id)+'\')" onclick="App.addMasterToEstimate(\''+esc(master.id)+'\')"><strong>'+esc(master.name)+'</strong>'+(master.desc?'<small>'+esc(master.desc)+'</small>':'')+'<small>'+esc(master.unit||'組')+' · ¥'+Number(master.price||0).toLocaleString()+'</small></button><div class="warehouse-actions"><button class="btn sm" onclick="App.warehouseAddToSet(\''+esc(master.id)+'\',\''+esc(selectedTemplate)+'\')">セット＋</button><button class="btn sm" onclick="App.warehouseEditMaster(\''+esc(master.id)+'\')">編集</button><button class="warehouse-delete" title="単品を削除" onclick="App.warehouseDeleteMaster(\''+esc(master.id)+'\')">×</button></div></div>').join('')||'<div class="empty">このカテゴリの単品はありません</div>';
     const modal=document.querySelector('#modal');modal.className='modal warehouse-modal';
     modal.innerHTML='<div class="warehouse-full-head"><h2>倉庫</h2><button class="btn sm" onclick="App.newTemplate()">＋ セット</button><button class="btn sm" onclick="App.warehouseNewCategoryMaster()">＋ 単品</button><button class="btn" onclick="App.close()">閉じる</button></div><div class="warehouse-full-body"><section class="warehouse-pane"><div class="warehouse-pane-head"><span>単品</span><select class="warehouse-category" onchange="App.warehouseCategory(this.value)">'+optionList(selectedCategory)+'</select></div><div class="warehouse-scroll">'+cards+'</div></section><section class="warehouse-pane"><div class="warehouse-pane-head"><span>セット</span><span class="warehouse-target-note">単品をドラッグして追加</span></div><div class="warehouse-scroll">'+sets+'</div></section></div>';
@@ -1270,55 +1270,15 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
 <script>
 /* セットの施工明細と、単品の追加オプションを分離する。単品削除でセットは壊さない。 */
 (function(){
-  const bathRecovery=[
-    {id:'photo_bath_clean',trade:'bath',name:'養生・清掃帯',desc:'写真見積の実例をもとにした初期項目',qty:1,unit:'組',price:50000,group:''},
-    {id:'photo_bath_demo',trade:'bath',name:'浴室内解体',desc:'既存浴室の解体・撤去',qty:1,unit:'組',price:215000,group:''},
-    {id:'photo_bath_disposal',trade:'bath',name:'廃材処分費',desc:'解体材の処分',qty:1,unit:'組',price:90000,group:''},
-    {id:'photo_bath_carpentry',trade:'bath',name:'周辺大工工事',desc:'下地・周辺補修を含む',qty:1,unit:'組',price:236000,group:''},
-    {id:'photo_bath_foundation',trade:'bath',name:'基礎土台補強工事',desc:'土台・補強',qty:1,unit:'組',price:155000,group:''},
-    {id:'photo_bath_adjust',trade:'bath',name:'据付調整工事',desc:'ユニットバス据付・調整',qty:1,unit:'組',price:198000,group:''},
-    {id:'photo_bath_plumbing',trade:'bath',name:'給排水配管工事',desc:'給排水接続を含む',qty:1,unit:'組',price:140000,group:''},
-    {id:'photo_bath_electric',trade:'bath',name:'電気設備工事',desc:'電気接続を含む',qty:1,unit:'組',price:65000,group:''},
-    {id:'photo_bath_unit',trade:'bath',name:'リクシル リデア M1616',desc:'ユニットバス本体',qty:1,unit:'組',price:589000,group:''}
-  ];
-  function protectSetItems(){
-    /* 起動時・倉庫表示時の自動復元／自動非表示は禁止。 */
-    return;
-    const masters=Catalog.masters(),templates=Catalog.templates();let changed=false;
-    /* 保存済み案件に残る明細を最優先の復元元にする。品名・概要・単価を推測しない。 */
-    const restoreFromSavedCase=(template,trade,minItems)=>{
-      if(!template||((template.items||[]).length>=minItems))return false;
-      const source=Store.read(Store.keys.cases,[]).filter(record=>record&&((record.trade===trade)||new RegExp(trade==='sash'?'サッシ':'ユニットバス').test(record.customer?.constructionName||''))&&Array.isArray(record.items)&&record.items.length>=minItems).sort((a,b)=>b.items.length-a.items.length)[0];
-      if(!source)return false;
-      const ids=[];source.items.forEach((item,index)=>{const id='recovered_'+trade+'_'+index+'_'+Date.now().toString(36);masters.push({id,trade,name:item.name||'',desc:item.desc||'',qty:+item.qty||1,unit:item.unit||'組',price:+item.price||0,group:item.group||'',setOnly:true});ids.push(id)});template.items=ids;return true;
-    };
-    const sash=templates.find(template=>template.id==='tpl_sash'||template.trade==='sash'||/サッシ/.test(template.name||''));
-    if(restoreFromSavedCase(sash,'sash',9))changed=true;
-    const bath=templates.find(template=>template.id==='tpl_bath'||template.trade==='bath'||/ユニットバス/.test(template.name||''));
-    if(restoreFromSavedCase(bath,'bath',9))changed=true;
-    /* 削除で空になった標準ユニットバスセットを、元の施工明細と単価で復元する。 */
-    if(bath&&!Store.read('bathSetRecoveredV3',false)&&(!bath.items||bath.items.length<bathRecovery.length)){
-      bathRecovery.forEach(item=>{if(!masters.some(master=>master.id===item.id)){masters.push({...item,setOnly:true});changed=true}});
-      bath.items=bathRecovery.map(item=>item.id);changed=true;
-      Store.write('bathSetRecoveredV3',true);
-    }
-    /* 旧版が誤って隠したカテゴリ単品を戻す。塗装の設定行と今回生成したセット行は除外する。 */
-    masters.forEach((master,index)=>{if(master.setOnly&&master.warehouseCategory&&!master.paintPriceKey&&!String(master.id||'').startsWith('setrow_')){masters[index]={...master,setOnly:false};changed=true}});
-    /*
-      旧形式では単品とセットが同じIDを共有していた。
-      ここで全セット構成員を setOnly 化すると、単品候補まで倉庫から消える。
-      現在は template.snapshotItems がセット本体なので、既存単品へは一切触れない。
-    */
-    if(changed){Catalog.saveMasters(masters);Catalog.saveTemplates(templates);Sync.push().catch(()=>{})}
-  }
-  const baseOpenWarehouse=App.openWarehouse;
-  App.openWarehouse=function(){protectSetItems();return baseOpenWarehouse.apply(this,arguments)};
-  const baseAddToSet=App.warehouseAddToSet;
   App.warehouseAddToSet=function(masterId,templateId){
     const master=Catalog.masters().find(item=>item.id===masterId),templates=Catalog.templates(),template=templates.find(item=>item.id===templateId);if(!master||!template)return;
-    /* 追加オプションは複製してセットへ渡すので、左の単品候補は残る。 */
-    const copy={...master,id:Catalog.id('m'),setOnly:true};
-    const masters=Catalog.masters();masters.push(copy);template.items=(template.items||[]).concat(copy.id);Catalog.saveMasters(masters);Catalog.saveTemplates(templates);Sync.push().catch(()=>{});App.openWarehouse();
+    /* セット本体へ値を複製する。単品マスターは作成・削除・変更しない。 */
+    const rows=Array.isArray(template.snapshotItems)&&template.snapshotItems.length
+      ?template.snapshotItems.slice()
+      :(template.items||[]).map(id=>Catalog.masters().find(item=>item.id===id)).filter(Boolean).map((item,index)=>({snapshotId:'si_'+template.id+'_'+index+'_'+Catalog.id('x'),sourceMasterId:item.id||'',paintPriceKey:item.paintPriceKey||'',name:item.name||'',desc:item.desc||'',qty:Number(item.qty)||0,unit:item.unit||'式',price:Number(item.price)||0,group:item.group||''}));
+    rows.push({snapshotId:'si_'+template.id+'_'+rows.length+'_'+Catalog.id('x'),sourceMasterId:master.id||'',paintPriceKey:master.paintPriceKey||'',name:master.name||'',desc:master.desc||'',qty:Number(master.qty)||0,unit:master.unit||'式',price:Number(master.price)||0,group:master.group||''});
+    template.snapshotItems=rows;
+    Catalog.saveTemplates(templates);Sync.push().catch(()=>{});App.openWarehouse();
   };
   const baseDeleteMaster=App.warehouseDeleteMaster;
   App.warehouseDeleteMaster=function(id){
@@ -1336,7 +1296,6 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     Sync.push().catch(()=>{});
     App.openWarehouse();
   };
-  window.addEventListener('load',protectSetItems,{once:true});
 })();
 </script>
 <script>
@@ -1374,6 +1333,8 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   /* 単品保存は単品だけ。塗装標準・セットへは触れない。 */
   Catalog.saveMasters=function(list){return originalSaveMasters(list)};
   function migrate(){
+    /* 完了済みの端末で、起動・同期のたびに既存データを書き直さない。 */
+    if((Store.read(Store.keys.dataSchema,null)||{}).version>=2)return;
     const templates=originalTemplates(),normalized=normalizeTemplates(templates,templates);
     if(JSON.stringify(templates)!==JSON.stringify(normalized))originalSaveTemplates(normalized);
     /* 旧塗装設定の移行は、専用保存が空の初回だけ行う。 */
@@ -1437,7 +1398,9 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   App.editTemplate=function(id){
     const templates=Catalog.templates(),current=id?templates.find(template=>template.id===id):null,base=current||{id:Catalog.id('t'),name:'新しいセット',trade:'other',snapshotItems:[]},rows=setRows(base),trades=[['sash','サッシ工事'],['bath','ユニットバス工事'],['concrete','コンクリ打設工事'],['paint','塗装工事'],['water','水回り工事'],['other','その他']];
     const modal=document.querySelector('#modal');modal.className='modal';modal.innerHTML='<div class="canonical-set-editor" data-template-id="'+editorEsc(base.id)+'"><h2>セットを編集</h2><div class="field"><label>セット名</label><input id="canonicalSetName" value="'+editorEsc(base.name)+'"></div><div class="field"><label>工種</label><select id="canonicalSetTrade">'+trades.map(([key,label])=>'<option value="'+key+'"'+(key===base.trade?' selected':'')+'>'+label+'</option>').join('')+'</select></div><label class="start-set-toggle"><input id="canonicalStartSet" type="checkbox"'+(base.startTile?' checked':'')+'> スタート画面の工事として表示</label><p class="editor-note">セットだけを保存します。単品一覧は変更しません。</p><div id="canonicalSetRows" class="edit-rows">'+rows.map(editorRow).join('')+'</div><div class="modal-actions"><button class="btn" type="button" onclick="App.setAddRow()">＋ 項目を追加</button><button class="btn primary" type="button" onclick="App.setCommit()">保存</button></div></div>';document.querySelector('#modalBg').classList.add('open');
-    modal.addEventListener('input',()=>{clearTimeout(setSaveTimer);setSaveTimer=setTimeout(saveSet,500)});modal.addEventListener('change',()=>{clearTimeout(setSaveTimer);setSaveTimer=setTimeout(saveSet,500)});
+    /* 同じモーダルを再利用しても保存イベントを重複登録しない。 */
+    modal.oninput=()=>{clearTimeout(setSaveTimer);setSaveTimer=setTimeout(saveSet,500)};
+    modal.onchange=()=>{clearTimeout(setSaveTimer);setSaveTimer=setTimeout(saveSet,500)};
   };
   App.setAddRow=function(){document.querySelector('#canonicalSetRows')?.insertAdjacentHTML('beforeend',editorRow({qty:1,unit:'組',price:0}))};
   App.setRemoveRow=function(button){button.closest('[data-set-row]')?.remove();saveSet()};
