@@ -1465,4 +1465,36 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
 })();
 </script>
 <script>App.start();</script>
+<script>
+/* 日常画面の「工事を変更」は、工種名から古いセットを推測しない。
+   倉庫に保存されているセットそのものを選び、スナップショットを案件へ複製する。 */
+(function(){
+  const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const tradeName=trade=>({sash:'サッシ',bath:'ユニットバス',concrete:'土間コンクリート',paint:'塗装',water:'水回り',other:'その他'})[trade]||'その他';
+  const rowsOf=template=>Array.isArray(template?.snapshotItems)&&template.snapshotItems.length
+    ?template.snapshotItems
+    :(template?.items||[]).map(id=>Catalog.masters().find(master=>master.id===id)).filter(Boolean);
+  App.openPrimarySetPicker=function(){
+    const templates=Catalog.templates().filter(template=>template.id!=='paint-price-settings'&&rowsOf(template).length);
+    const modal=document.querySelector('#modal');
+    modal.className='modal';
+    modal.innerHTML='<h2>2　工事セットを選ぶ</h2><p class="notice">倉庫で作ったセットから選びます。選ぶと現在の明細をそのセットに入れ替えます。</p><div class="additional-trades">'+(templates.length?templates.map(template=>'<button class="btn" type="button" onclick="App.replaceEstimateWithSet(\''+esc(template.id)+'\')"><b>'+esc(template.name)+'</b><small>'+tradeName(template.trade)+' ・ '+rowsOf(template).length+'項目</small></button>').join(''):'<div class="empty">倉庫に選べるセットがありません。</div>')+'</div><div class="modal-actions"><button class="btn" type="button" onclick="App.close()">戻る</button></div>';
+    document.querySelector('#modalBg').classList.add('open');
+  };
+  App.replaceEstimateWithSet=function(id){
+    const template=Catalog.templates().find(item=>item.id===id),rows=rowsOf(template);if(!template||!rows.length)return;
+    if(!confirm('現在の明細を「'+template.name+'」に入れ替えます。よろしいですか？'))return;
+    const current=Store.read(Store.keys.draft,{}),items=rows.map((row,index)=>({
+      id:Catalog.id('i'),name:row.name||'',desc:row.desc||'',qty:Number(row.qty)||0,
+      unit:row.unit||'組',price:Number(row.price)||0,group:row.group||'',linked:!!row.group,
+      templateId:template.id,snapshotId:row.snapshotId||('set_'+index)
+    }));
+    Store.write(Store.keys.draft,{...current,trade:template.trade||'other',items,quantities:{...(current.quantities||{})},updatedAt:new Date().toISOString()});
+    App.close();
+    /* App 本体の作業中データも安全に読み直す。保存済み案件・倉庫・Sheetsは変更しない。 */
+    window.location.reload();
+  };
+  App.backToFlowStart=function(){App.openPrimarySetPicker()};
+})();
+</script>
 </body></html>
