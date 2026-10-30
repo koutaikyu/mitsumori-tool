@@ -872,7 +872,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
 </script>
 <style>
 /* 日常の見積作成用導線。印刷用HTML/CSSには一切影響させない。 */
-.top .daily-actions{display:flex;align-items:center;gap:8px}.top .manage-btn{background:#eaf3ff;border-color:#9fc3f3;color:#0b4d9b}.flow-start{border:1px solid var(--line);border-radius:10px;background:#f8fbff;padding:12px;margin:0 0 14px}.flow-start h2{font-size:16px;margin:0 0 8px}.flow-start .flow-customer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #b9d5f6;border-radius:8px;background:#fff}.flow-start .flow-customer small{display:block;color:var(--muted);margin-top:2px}.flow-start .flow-next{color:var(--muted);font-size:12px;margin:9px 0 0}.workflow-bar{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:7px;margin:0 0 10px}.workflow-step{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff;min-width:0}.workflow-step b,.workflow-step span{display:block}.workflow-step b{font-size:11px;color:var(--blue)}.workflow-step span{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.workflow-step button{margin-top:4px;padding:3px 5px;font-size:11px}.workflow-step.current{border-color:#8bb9ee;background:#f1f7ff}.step-title{display:flex;align-items:center;gap:7px}.step-title .step-no{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px}.summary:before{content:'4　金額を確認';font-size:15px;font-weight:900;color:var(--navy);padding-bottom:2px;border-bottom:1px solid var(--line)}
+.top .daily-actions{display:flex;align-items:center;gap:8px}.top .manage-btn{background:#eaf3ff;border-color:#9fc3f3;color:#0b4d9b}.flow-start{border:1px solid var(--line);border-radius:10px;background:#f8fbff;padding:12px;margin:0 0 14px}.flow-start h2{font-size:16px;margin:0 0 8px}.flow-start .flow-customer{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 10px;border:1px solid #b9d5f6;border-radius:8px;background:#fff}.flow-start .flow-customer small{display:block;color:var(--muted);margin-top:2px}.flow-start .flow-next{color:var(--muted);font-size:12px;margin:9px 0 0}.workflow-bar{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;margin:0 0 10px}.workflow-step{border:1px solid var(--line);border-radius:8px;padding:8px;background:#fff;min-width:0}.workflow-step b,.workflow-step span{display:block}.workflow-step b{font-size:11px;color:var(--blue)}.workflow-step span{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.workflow-step button{margin-top:4px;padding:3px 5px;font-size:11px}.workflow-step.current{border-color:#8bb9ee;background:#f1f7ff}.step-title{display:flex;align-items:center;gap:7px}.step-title .step-no{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;font-size:11px}.summary:before{content:'3　金額を確認・PDF';font-size:15px;font-weight:900;color:var(--navy);padding-bottom:2px;border-bottom:1px solid var(--line)}
 /* PCとスマホを同じ「品名・数量・金額」表示へ統一する。 */
 .table{display:none!important}.card-list{display:block!important}.item-line{grid-template-columns:28px minmax(0,1fr) 62px 84px 50px 28px!important;gap:5px!important;min-height:43px;padding:5px 7px!important}.item-line .unit,.item-line input[oninput*="price"]{display:none!important}.item-line .item-drag-handle{grid-column:1}.item-line .item-name{grid-column:2;font-size:14px;white-space:normal}.item-line input[oninput*="qty"]{grid-column:3;border:1px solid var(--line);border-radius:5px;background:#fff;padding:5px;text-align:right}.item-line .money{grid-column:4;font-size:13px}.item-detail-toggle{grid-column:5;border:1px solid var(--line);border-radius:6px;background:#fff;color:var(--blue);font-weight:800;font-size:11px;padding:4px}.item-line .icon{grid-column:6}.item-card.open .detail{display:grid}.detail-price{grid-column:auto}.detail .detail-price input{width:100%;border:1px solid var(--line);border-radius:5px;padding:6px}.management-menu{display:grid;gap:8px}.management-menu button{text-align:left;padding:13px}.management-menu small{display:block;color:var(--muted);font-weight:500;margin-top:3px}@media(max-width:760px){.top .daily-actions{gap:5px}.top .daily-actions .btn{padding:7px 7px;font-size:12px}.top .brand{display:none}.workflow-bar{grid-template-columns:1fr 1fr;gap:5px}.workflow-step{padding:7px}.workflow-step span{font-size:11px}.flow-start{margin-top:2px}.item-line{grid-template-columns:25px minmax(0,1fr) 52px 73px 44px 25px!important;gap:3px!important}.item-line .item-name{font-size:13px}.item-detail-toggle{padding:4px 2px;font-size:10px}.detail-price{grid-column:1/-1}}
 </style>
@@ -890,7 +890,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   function startFlow(){
     const start=document.querySelector('#start');if(!start||start.querySelector('.flow-start'))return;
     const box=document.createElement('div');box.className='flow-start';
-    box.innerHTML='<h2>見積を作成する</h2><div class="flow-customer"><div><b>1　顧客を選ぶ</b><small id="flowCustomerName">Googleカレンダーから予定を選択</small></div><button class="btn primary" onclick="App.openCustomer()">顧客を選ぶ</button></div><p class="flow-next">2　工事セットを選ぶ　→　3　一括数量を入力　→　4　金額を確認してPDF</p>';
+    box.innerHTML='<h2>見積を作成する</h2><div class="flow-customer"><div><b>1　顧客を選ぶ</b><small id="flowCustomerName">Googleカレンダーから予定を選択</small></div><button class="btn primary" onclick="App.openCustomer()">顧客を選ぶ</button></div><p class="flow-next">2　工事を選んで数量を入力　→　3　金額を確認してPDF</p>';
     start.insertBefore(box,start.firstChild);
   }
   function refreshFlow(){
@@ -898,9 +898,9 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const name=document.querySelector('#flowCustomerName');if(name)name.textContent=customer.name?customer.name+'　'+(customer.address||''):'Googleカレンダーから予定を選択';
     const work=document.querySelector('#work');if(!work||work.classList.contains('hide'))return;
     let bar=work.querySelector('.workflow-bar');if(!bar){bar=document.createElement('div');bar.className='workflow-bar';work.insertBefore(bar,work.firstChild)}
-    bar.innerHTML='<div class="workflow-step current"><b>1 顧客</b><span>'+esc(customer.name||'未選択')+'</span><button class="btn sm" onclick="App.openCustomer()">変更</button></div><div class="workflow-step current"><b>2 工事</b><span>'+esc(customer.constructionName||tradeLabel(data.trade))+'</span><button class="btn sm" onclick="App.backToFlowStart()">変更</button></div><div class="workflow-step"><b>3 数量</b><span>一括数量・明細</span></div><div class="workflow-step"><b>4 確認</b><span>合計 → PDF</span></div>';
-    document.querySelectorAll('#quantityPanel .headrow h2').forEach(node=>node.innerHTML='<span class="step-title"><span class="step-no">3</span>一括数量</span>');
-    document.querySelectorAll('#work > .workspace > div > .panel .headrow h2').forEach(node=>{if(node.textContent.trim()==='明細')node.innerHTML='<span class="step-title"><span class="step-no">3</span>明細</span>'});
+    bar.innerHTML='<div class="workflow-step current"><b>1 顧客</b><span>'+esc(customer.name||'未選択')+'</span><button class="btn sm" onclick="App.openCustomer()">変更</button></div><div class="workflow-step current"><b>2 工事・数量</b><span>'+esc(customer.constructionName||tradeLabel(data.trade))+'</span><button class="btn sm" onclick="App.backToFlowStart()">工事を変更</button></div><div class="workflow-step"><b>3 確認・PDF</b><span>合計を確認して発行</span><button class="btn sm" onclick="App.goToSummary()">金額を見る</button></div>';
+    document.querySelectorAll('#quantityPanel .headrow h2').forEach(node=>node.innerHTML='<span class="step-title"><span class="step-no">2</span>数量をまとめて入力</span>');
+    document.querySelectorAll('#work > .workspace > div > .panel .headrow h2').forEach(node=>{if(node.textContent.trim()==='明細')node.innerHTML='<span class="step-title"><span class="step-no">2</span>明細を確認</span>'});
   }
   App.openManagement=function(){
     document.querySelector('#modal').innerHTML='<h2>管理</h2><div class="management-menu"><button class="btn" onclick="App.openWarehouse()"><b>倉庫・セット管理</b><small>単品、工事セット、マスターを編集</small></button><button class="btn" onclick="App.openSync()"><b>Google Sheets 同期</b><small>マスターとセットを同期</small></button><button class="btn" onclick="App.newEstimate()"><b>新しい見積を作る</b><small>現在の作業中見積を新規に切り替え</small></button></div><div class="modal-actions"><button class="btn" onclick="App.close()">閉じる</button></div>';
@@ -910,6 +910,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const work=document.querySelector('#work'),start=document.querySelector('#start');if(!work||!start)return;
     work.classList.add('hide');start.classList.remove('hide');start.scrollIntoView({behavior:'smooth',block:'start'});
   };
+  App.goToSummary=function(){document.querySelector('.summary')?.scrollIntoView({behavior:'smooth',block:'start'})};
   function decorateCards(){
     document.querySelectorAll('#cards .item-card').forEach(card=>{
       const line=card.querySelector('.item-line'),detail=card.querySelector('.detail');if(!line||!detail)return;
@@ -919,7 +920,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
       }
       if(!detail.querySelector('.detail-price')){
         const source=[...line.querySelectorAll('input')].find(input=>(input.getAttribute('oninput')||'').includes("'price'"));
-        if(source){const match=(source.getAttribute('oninput')||'').match(/App\.setItem\((\d+),'price'/);if(match){const field=document.createElement('div');field.className='field detail-price';field.innerHTML='<label>単価</label><input type="number" inputmode="numeric" value="'+esc(source.value)+'" oninput="App.setItem('+match[1]+',\'price\',this.value)">';detail.appendChild(field)}}
+        if(source){const match=(source.getAttribute('oninput')||'').match(/App\.setItem\((\d+),'price'/);if(match){const field=document.createElement('div');field.className='field detail-price';field.innerHTML='<label>単価（千円単位）</label><input type="number" step="1000" inputmode="numeric" value="'+esc(source.value)+'" oninput="App.setItem('+match[1]+',\'price\',this.value)">';detail.appendChild(field)}}
       }
     });
   }
@@ -930,6 +931,12 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     rewriteHeader();startFlow();cardObserver.observe(document.querySelector('#work'),{childList:true,subtree:true});
     decorateCards();refreshFlow();
   }
+  /* 単価だけを千円単位にする。数量・面積などの入力刻みは変えない。 */
+  document.addEventListener('focusin',event=>{
+    const input=event.target;if(!(input instanceof HTMLInputElement)||input.type!=='number')return;
+    const priceInput=input.classList.contains('price')||/price/i.test(input.id||'')||/['\"]price['\"]/.test(input.getAttribute('oninput')||'');
+    if(priceInput){input.step='1000';input.setAttribute('aria-label','単価（千円単位）')}
+  });
   ['chooseTrade','loadCase','saveCustomer','applyCalendarEvent','newEstimate'].forEach(name=>{
     const base=App[name];if(!base)return;
     App[name]=function(){const result=base.apply(this,arguments);setTimeout(()=>{startFlow();decorateCards();refreshFlow()},0);return result};
@@ -1085,7 +1092,7 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     panel.dataset.linkedSignature=signature;
     panel.classList.toggle('hide',groups.length===0);
     if(!groups.length)return;
-    const title=panel.querySelector('.headrow h2');if(title)title.innerHTML='<span class="step-title"><span class="step-no">3</span>数量一括変換</span>';
+    const title=panel.querySelector('.headrow h2');if(title)title.innerHTML='<span class="step-title"><span class="step-no">2</span>数量一括変換</span>';
     boxes.innerHTML=groups.map(group=>{const [label,unit]=definitions[group];return '<div class="field qbox"><div class="q-label"><label>'+label+'</label><button type="button" class="batch-apply" onclick="App.forceGroup(\''+group+'\',this.closest(\'.qbox\').querySelector(\'input\').value)">一括反映</button></div><input type="number" value="'+esc(data.quantities?.[group]??'')+'" oninput="App.applyGroup(\''+group+'\',this.value)"><span>'+unit+'</span></div>'}).join('');
   }
   /* 「一括反映」は、個別編集で連動を外した明細も含めて同じ区分だけ更新する。 */
