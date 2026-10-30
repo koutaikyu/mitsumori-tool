@@ -1076,6 +1076,10 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
        保存済み案件の trade 値は古い名称のことがあるので、trade 値には依存しない。 */
     const data=draft(),groups=[...new Set((data.items||[]).filter(item=>definitions[item.group]).map(item=>item.group))]
       .filter(group=>group!=='paintArea'&&group!=='scaffoldArea');
+    /* 旧セットには数量グループが未設定のものがある。見積の主工種が明確な場合だけ、
+       見積書側に一括変換欄を出す。倉庫のデータは変更しない。 */
+    if(data.trade==='sash'&&!groups.includes('sashCount'))groups.unshift('sashCount');
+    if(data.trade==='concrete'&&!groups.includes('concreteArea'))groups.unshift('concreteArea');
     const signature=(data.trade||'')+'|'+groups.join('|')+'|'+groups.map(group=>data.quantities?.[group]??'').join('|');
     if(panel.dataset.linkedSignature===signature)return;
     panel.dataset.linkedSignature=signature;
@@ -1087,7 +1091,14 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
   /* 「一括反映」は、個別編集で連動を外した明細も含めて同じ区分だけ更新する。 */
   App.forceGroup=function(group,value){
     const data=draft(),qty=Number(value)||0;
-    (data.items||[]).forEach((item,index)=>{if(item.group===group)App.setItem(index,'linked',true)});
+    (data.items||[]).forEach((item,index)=>{
+      const legacySash=group==='sashCount'&&data.trade==='sash'&&!item.group;
+      const legacyConcrete=group==='concreteArea'&&data.trade==='concrete'&&!item.group&&item.unit==='㎡';
+      if(item.group===group||legacySash||legacyConcrete){
+        if(!item.group)App.setItem(index,'group',group);
+        App.setItem(index,'linked',true);
+      }
+    });
     App.applyGroup(group,qty);
     setTimeout(syncLinkedQuantities,0);
   };
