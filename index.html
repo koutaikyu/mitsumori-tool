@@ -1487,15 +1487,17 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     const template=Catalog.templates().find(item=>item.id===id),rows=rowsOf(template);
     if(!template||!rows.length){alert('このセットの明細を読み出せません。現在の見積は変更していません。倉庫でセット内容を確認してください。');return}
     if(!confirm('現在の明細を「'+template.name+'」に入れ替えます。よろしいですか？'))return;
-    const current=Store.read(Store.keys.draft,{}),items=rows.map((row,index)=>({
-      id:Catalog.id('i'),name:row.name||'',desc:row.desc||'',qty:Number(row.qty)||0,
-      unit:row.unit||'組',price:Number(row.price)||0,group:row.group||'',linked:!!row.group,
-      templateId:template.id,snapshotId:row.snapshotId||('set_'+index)
-    }));
-    Store.write(Store.keys.draft,{...current,trade:template.trade||'other',items,quantities:{...(current.quantities||{})},updatedAt:new Date().toISOString()});
-    App.close();
-    /* App 本体の作業中データも安全に読み直す。保存済み案件・倉庫・Sheetsは変更しない。 */
-    window.location.reload();
+    const before=JSON.parse(JSON.stringify(Store.read(Store.keys.draft,{})));
+    const prepared={...before,trade:template.trade||'other',items:[],quantities:{...(before.quantities||{})},customer:{...(before.customer||{}),constructionName:template.name},updatedAt:new Date().toISOString()};
+    try{
+      /* 倉庫の追加と同じスナップショット展開を使う。これなら単品の有無に影響されない。 */
+      Store.write(Store.keys.draft,prepared);App.start();App.addTemplate(template.id);
+      const result=Store.read(Store.keys.draft,{});
+      if(!(result.items||[]).length)throw Error('セット展開後の明細が0件です');
+    }catch(error){
+      Store.write(Store.keys.draft,before);App.start();
+      alert('セットを見積へ展開できなかったため、変更前の見積に戻しました。');
+    }
   };
   App.backToFlowStart=function(){App.openPrimarySetPicker()};
 })();
