@@ -1476,11 +1476,12 @@ const oldCommit=App.commitMaster;App.commitMaster=function(){const f=document.qu
     if(snapshots.length)return snapshots;
     return (template?.items||[]).map(id=>Catalog.masters().find(master=>master.id===id)).filter(row=>row&&String(row.name||'').trim());
   };
+  const setTotal=template=>rowsOf(template).reduce((sum,row)=>sum+(Number(row.qty)||0)*(Number(row.price)||0),0);
   App.openPrimarySetPicker=function(){
     const templates=Catalog.templates().filter(template=>template.id!=='paint-price-settings'&&rowsOf(template).length);
     const modal=document.querySelector('#modal');
     modal.className='modal';
-    modal.innerHTML='<h2>2　工事セットを選ぶ</h2><p class="notice">倉庫で作ったセットから選びます。選ぶと現在の明細をそのセットに入れ替えます。</p><div class="additional-trades">'+(templates.length?templates.map(template=>'<button class="btn" type="button" onclick="App.replaceEstimateWithSet(\''+esc(template.id)+'\')"><b>'+esc(template.name)+'</b><small>'+tradeName(template.trade)+' ・ '+rowsOf(template).length+'項目</small></button>').join(''):'<div class="empty">倉庫に選べるセットがありません。</div>')+'</div><div class="modal-actions"><button class="btn" type="button" onclick="App.close()">戻る</button></div>';
+    modal.innerHTML='<h2>2　工事セットを選ぶ</h2><p class="notice">倉庫で作ったセットから選びます。選ぶと現在の明細をそのセットに入れ替えます。</p><div class="additional-trades">'+(templates.length?templates.map(template=>'<button class="btn" type="button" onclick="App.replaceEstimateWithSet(\''+esc(template.id)+'\')"><b>'+esc(template.name)+'</b><small>'+tradeName(template.trade)+' ・ '+rowsOf(template).length+'項目 ・ 標準合計 ¥'+setTotal(template).toLocaleString('ja-JP')+'</small></button>').join(''):'<div class="empty">倉庫に選べるセットがありません。</div>')+'</div><div class="modal-actions"><button class="btn" type="button" onclick="App.close()">戻る</button></div>';
     document.querySelector('#modalBg').classList.add('open');
   };
   App.replaceEstimateWithSet=function(id){
